@@ -1,0 +1,4 @@
+lxml == 4.* 
+PyMySQL==0.10.1
+pytz==2020.4
+requests==2.25.0

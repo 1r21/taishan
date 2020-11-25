@@ -1,0 +1,27 @@
+.DS_Store
+.vscode/
+
+# package
+**/node_modules/
+yarn.lock
+package-lock.json
+
+# cache
+__pycache__/
+**/**/__pycache__
+
+# venv
+.venv/
+
+# static files
+static/audio/*
+static/image/*
+
+# secure config
+**/**/secure.py
+
+# uwsgi
+**/uwsgi/uwsgi*
+
+# useless test
+playground.py

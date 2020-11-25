@@ -1,0 +1,37 @@
+version: "3.8"
+# https://docs.docker.com/compose/compose-file/#extension-fields
+x-server: &common-config
+  STATIC_PORT: 8001
+  API_PORT: 8000
+
+services:
+  api:
+    build: .
+    volumes:
+      - ./app:/taishan/app
+      - ./static:/taishan/static
+      - ./app.py:/taishan/app.py
+      - ./uwsgi.ini:/etc/uwsgi/uwsgi.ini
+    environment:
+      <<: *common-config
+      WEB_SERVER: http://localhost:3000
+      HTTP_PROXY: http://127.0.0.1:1087
+      HTTPS_PROXY: http://127.0.0.1:1087
+  static:
+    image: nginx:alpine
+    volumes:
+      - ./nginx.conf:/etc/nginx/templates/default.conf.template
+      - ./static:/static
+    ports:
+      # port on 6000 can't use on Mac
+      # https://stackoverflow.com/questions/4313403/why-do-browsers-block-some-ports/22622633#22622633
+      - "8000:8000" # uwsgi/api
+      - "8001:8001" # static
+      - "8002:8002" # web
+    # determine the order of service startup
+    # https://docs.docker.com/compose/compose-file/#depends_on
+    depends_on:
+      - "api"
+    environment:
+      <<: *common-config
+      STATIC_DIR: static
