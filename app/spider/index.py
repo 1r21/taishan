@@ -14,7 +14,6 @@ tz = pytz.timezone("America/New_York")
 today = datetime.datetime.now(tz)
 
 
-
 base_url = "https://www.pbs.org/newshour/latest"
 # base_url = "http://192.168.8.149:5000/The Latest _ PBS NewsHour.htm"
 
@@ -74,15 +73,20 @@ def parse_transcript_audio():
     title = news_wrap["title"]
     content = fetch_content(url)
     html = etree.HTML(content, etree.HTMLParser())
-    transcript = html.xpath('//div[@id="transcript"]/ul[@class="video-transcript"]')
-    audio = html.xpath("//audio/source/@src")[0]
-    transcript = etree.tostring(transcript[0])
-    audio_url = save_audio(audio)
-    sql = "INSERT INTO `news` (`audio_url`, `title`,`transcript`,`date`) VALUES (%s, %s, %s, %s)"
-    values = (audio_url, title, transcript, today)
-    save_msg = exec_sql(sql, values)
-    send_message(title=title, content="pbs")
-    return save_msg
+    transcriptEl = html.xpath('//div[@id="transcript"]/ul[@class="video-transcript"]')
+    transcript = (
+        etree.tostring(transcriptEl[0]) if len(transcriptEl) > 0 else "no transcript"
+    )
+    audioEl = html.xpath("//audio/source/@src")
+    if len(audioEl) > 0:
+        audio = audioEl[0]
+        audio_url = save_audio(audio)
+        sql = "INSERT INTO `news` (`audio_url`, `title`,`transcript`,`date`) VALUES (%s, %s, %s, %s)"
+        values = (audio_url, title, transcript, today)
+        save_msg = exec_sql(sql, values)
+        send_message(title=title, content="pbs")
+        return save_msg
+    return "No File"
 
 
 if __name__ == "__main__":

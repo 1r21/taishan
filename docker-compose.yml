@@ -1,6 +1,7 @@
 version: "3.8"
 # https://docs.docker.com/compose/compose-file/#extension-fields
 x-server: &common-config
+  STATIC_HOST: localhost
   STATIC_PORT: 8001
   API_PORT: 8000
 
@@ -27,7 +28,6 @@ services:
       # https://stackoverflow.com/questions/4313403/why-do-browsers-block-some-ports/22622633#22622633
       - "8000:8000" # uwsgi/api
       - "8001:8001" # static
-      - "8002:8002" # web
     # determine the order of service startup
     # https://docs.docker.com/compose/compose-file/#depends_on
     depends_on:
