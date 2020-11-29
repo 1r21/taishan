@@ -1,5 +1,6 @@
+import hashlib
 import pymysql
-from app.config.secure import HOST, PORT, USERNAME, PASSWORD, DB
+from app.config.secure import HOST, PORT, USERNAME, PASSWORD, DB, TOKEN_SALT
 
 
 def create_connection():
@@ -24,7 +25,7 @@ def exec_sql(sql, values):
             cursor.execute(sql, values)
         # save changes.
         connection.commit()
-        return "Save Success"
+        return "Ok"
     except:
         connection.rollback()
         return "Error happen"
@@ -49,3 +50,7 @@ def query_size(sql, values=None, size=1):
         # size=1 == fetchone
         result = cursor.fetchmany(size=size)
         return result
+
+
+def make_password(password):
+    return hashlib.md5(f"{password}{TOKEN_SALT}".encode("utf-8")).hexdigest()

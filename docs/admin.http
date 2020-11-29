@@ -1,1 +1,25 @@
+# @name login
+POST http://localhost:8080/admin/user?a=1
+content-type: application/json
+
+{
+    "username": "admin",
+    "password": "admin"
+}
+
+###
+@authToken = {{login.response.body.token}}
+
+### 
 GET http://localhost:8080/admin/crawl
+X-Token: {{authToken}}
+
+
+###
+@authToken = {{login.response.body.token}}
+POST http://localhost:8080/admin/delete/news
+X-Token: {{authToken}}
+
+{
+    "id": 12
+}

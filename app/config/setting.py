@@ -1,5 +1,6 @@
 import os
 
+TOKEN_EXP = 30 * 60
 env = os.environ
 
 STATIC_HOST = env.get("STATIC_HOST") or "localhost"

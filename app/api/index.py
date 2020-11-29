@@ -1,32 +1,26 @@
+from app.api.admin import login
 from ..libs.helper import query_all
+from ..libs.decorator import login_required, route
+from ..libs.response import show_reponse
 from ..config.setting import STATIC_SERVER
-from ..spider.index import parse_transcript_audio
-
-# route map
-ROUTE = {}
-
-
-def route(url):
-    def wrapper(func):
-        ROUTE[url] = func
-
-    return wrapper
 
 
 @route("/")
 def index():
-    return "this is index page"
+    return show_reponse(data="this is index page")
 
 
 @route("/favicon.ico")
 def favicon():
-    return "icon"
+    return None
 
 
 @route("/api/news")
 def get_news():
     # date desc
-    sql = "Select `id`,`title`,`audio_url`,`transcript` from `news` order by `date` desc"
+    sql = (
+        "Select `id`,`title`,`audio_url`,`transcript` from `news` order by `date` desc"
+    )
     news = query_all(sql)
     data = []
     for item in news:
@@ -38,18 +32,10 @@ def get_news():
             dict(
                 id=id,
                 title=title,
-                src=STATIC_SERVER + "/audio/" + url,
                 transcript=transcript,
+                src=STATIC_SERVER + "/audio/" + url,
                 cover=STATIC_SERVER + "/image/ibelieve.jpeg",
             ),
         )
 
-    return {"list": data}
-
-
-# admin api
-@route("/admin/crawl")
-def start_crawl():
-    message = parse_transcript_audio()
-    return {"message": message}
-
+    return show_reponse(data={"list": data})
