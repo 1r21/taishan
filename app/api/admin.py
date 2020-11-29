@@ -30,16 +30,16 @@ def login():
 @login_required
 def start_crawl():
     message = parse_transcript_audio()
-    return show_reponse(code=Status.other, message=message)
+    code = Status.success if message == "Ok" else Status.other
+    return show_reponse(code=code, message=message)
 
 
 @route("/admin/delete/news")
 @login_required
 def delete_news():
-    error_message = "username or password error"
     data = request.get("data")
     if not data:
-        return {"message": error_message}
+        return show_reponse(code=Status.other, message="param error")
     news_id = data.get("id")
     sql = "DELETE FROM `news` where `id`=%s"
     message = exec_sql(sql, news_id)

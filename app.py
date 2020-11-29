@@ -25,6 +25,7 @@ def application(environ, start_response):
         ("Content-type", "application/json; charset=utf-8"),
         ("Access-Control-Allow-Headers", "*"),
         ("Access-Control-Allow-Origin", "*"),
+        ("Access-Control-Max-Age ", "600"), # cache preflight request 10min
     ]
     start_response(status, headers)
     try:
