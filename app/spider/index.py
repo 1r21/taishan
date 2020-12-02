@@ -6,7 +6,7 @@ import pytz
 import requests
 from lxml import etree
 
-from app.config.setting import PROXY
+from app.setting import PROXY
 from app.libs.helper import exec_sql, query_size
 from app.robot.index import send_message
 
@@ -135,5 +135,5 @@ if __name__ == "__main__":
         print("Start Crawl...")
         message = parse_transcript_audio()
         print(f"Crawl Result: {message}")
-    except error:
-        print("Error Happened")
+    except Exception as e:
+        print(f"{e}")

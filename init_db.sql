@@ -1,0 +1,22 @@
+-- database
+CREATE DATABASE IF NOT EXISTS ai_english CHARACTER SET utf8mb4;
+USE ai_english;
+-- table news
+CREATE TABLE IF NOT EXISTS `news` (
+    `id` INT(6) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `title` VARCHAR(255) DEFAULT NULL,
+    `transcript` TEXT,
+    `audio_url` VARCHAR(255) DEFAULT NULL,
+    `image_url` VARCHAR(255) DEFAULT NULL,
+    `source` VARCHAR(255) DEFAULT NULL,
+    `audio_from` VARCHAR(255) DEFAULT NULL,
+    `image_from` VARCHAR(255) DEFAULT NULL,
+    `date` DATE DEFAULT NULL
+) ENGINE = InnoDB DEFAULT CHARACTER SET utf8mb4;
+-- table users
+CREATE TABLE IF NOT EXISTS `users` (
+    `id` INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `username` VARCHAR(255) DEFAULT NULL,
+    `password` VARCHAR(255) DEFAULT NULL,
+    `datetime` DATETIME NOT NULL
+) ENGINE = InnoDB DEFAULT CHARACTER SET utf8mb4;

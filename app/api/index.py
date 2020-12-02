@@ -1,8 +1,7 @@
-from app.api.admin import login
 from ..libs.helper import query_all
-from ..libs.decorator import login_required, route
+from ..libs.decorator import route
 from ..libs.response import show_reponse
-from ..config.setting import STATIC_SERVER
+from ..setting import FILE_SERVER_URL
 
 
 @route("/")
@@ -33,8 +32,8 @@ def get_news():
                 id=id,
                 title=title,
                 transcript=transcript,
-                src=STATIC_SERVER + "/audio/" + url,
-                cover=STATIC_SERVER + "/image/ibelieve.jpeg",
+                src=FILE_SERVER_URL + "/audio/" + url,
+                cover=FILE_SERVER_URL + "/image/ibelieve.jpeg",
             ),
         )
 

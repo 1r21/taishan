@@ -1,16 +1,15 @@
 import hashlib
 import pymysql
-from app.config.secure import HOST, PORT, USERNAME, PASSWORD, DB, TOKEN_SALT
-
+from app.setting import HOST, PORT, USER_NAME, PASSWORD, DB_NAME, TOKEN_SALT
 
 def create_connection():
     # Connect to the database
     connection = pymysql.connect(
         host=HOST,
-        port=PORT,
-        user=USERNAME,
+        port=int(PORT),
+        db=DB_NAME,
+        user=USER_NAME,
         password=PASSWORD,
-        db=DB,
         charset="utf8mb4",
     )
     return connection

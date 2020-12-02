@@ -1,23 +1,36 @@
 version: "3.8"
-# https://docs.docker.com/compose/compose-file/#extension-fields
-x-server: &common-config
-  STATIC_HOST: localhost
-  STATIC_PORT: 8001
-  API_PORT: 8000
 
 services:
   api:
     build: .
+    image: taishan-server:alpine
     volumes:
       - ./app:/taishan/app
       - ./static:/taishan/static
       - ./app.py:/taishan/app.py
       - ./uwsgi.ini:/etc/uwsgi/uwsgi.ini
+    depends_on: 
+      - db
+    env_file: .env
+    environment: 
+      HOST: db
+      PORT: 3306
+      USER_NAME: root 
+      PASSWORD: abc124
+
+  db:
+    image: mysql
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    ports:
+      - "3308:3306"
+    volumes: 
+      # init database and table
+      - ./init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
     environment:
-      <<: *common-config
-      WEB_SERVER: http://localhost:3000
-      HTTP_PROXY: http://127.0.0.1:1087
-      HTTPS_PROXY: http://127.0.0.1:1087
+      MYSQL_DATABASE: ai_english
+      MYSQL_ROOT_PASSWORD: abc124
+      
   static:
     image: nginx:alpine
     volumes:
@@ -27,11 +40,13 @@ services:
       # port on 6000 can't use on Mac
       # https://stackoverflow.com/questions/4313403/why-do-browsers-block-some-ports/22622633#22622633
       - "8000:8000" # uwsgi/api
-      - "8001:8001" # static
+      - "7000:7000" # static
+
     # determine the order of service startup
     # https://docs.docker.com/compose/compose-file/#depends_on
     depends_on:
       - "api"
     environment:
-      <<: *common-config
-      STATIC_DIR: static
+      UWSGI_PORT: 8000
+      SERVER_PORT: 8000
+      FILE_SERVER_PORT: 7000

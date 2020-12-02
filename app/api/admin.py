@@ -5,8 +5,7 @@ from ..libs.helper import exec_sql, query_size, make_password
 from ..libs.decorator import route, login_required
 from ..libs.response import show_reponse, Status
 from ..libs.variable import request
-from ..config.setting import TOKEN_EXP
-from ..config.secure import TOKEN_SALT
+from ..setting import TOKEN_EXP,TOKEN_SALT
 from ..spider.index import parse_transcript_audio
 
 # admin user

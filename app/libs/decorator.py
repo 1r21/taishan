@@ -4,7 +4,7 @@ import jwt
 
 from app.libs.helper import query_size
 from app.libs.variable import ROUTE, request
-from app.config.secure import TOKEN_SALT
+from app.setting import TOKEN_SALT
 
 def route(url):
     def wrapper(func):

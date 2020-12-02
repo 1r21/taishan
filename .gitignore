@@ -23,5 +23,8 @@ static/image/*
 # uwsgi
 **/uwsgi/uwsgi*
 
+# .env
+.env
+
 # useless test
 playground.py

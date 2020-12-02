@@ -4,7 +4,7 @@ import hashlib
 import base64
 import urllib.parse
 
-from app.config.secure import DINGDING_ROBOT_KEY
+from app.setting import DINGDING_ROBOT_KEY
 
 
 def compute_sign():

@@ -1,6 +1,5 @@
 import json
 from urllib.parse import parse_qs
-from wsgiref.simple_server import make_server
 
 from app.libs.variable import ROUTE, request
 from app.libs.response import show_reponse, Status
@@ -37,6 +36,7 @@ def application(environ, start_response):
 
 
 if __name__ == "__main__":
+    from wsgiref.simple_server import make_server
     with make_server("", 8080, application) as httpd:
         print("Serving on port 8080...")
         httpd.serve_forever()

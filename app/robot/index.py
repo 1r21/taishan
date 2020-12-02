@@ -1,7 +1,6 @@
 import requests
 
-from app.config.secure import DINGDING_TOKEN
-from app.config.setting import WEB_SERVER, STATIC_SERVER
+from app.setting import DINGDING_TOKEN, WEB_APP_URL, FILE_SERVER_URL
 from .compute_sign import compute_sign
 
 webhook = "https://oapi.dingtalk.com/robot/send?access_token="
@@ -19,8 +18,8 @@ def send_message(title="pbs news wrap", content="pbs", picUrl=None):
         "link": {
             "text": content,
             "title": title,
-            "picUrl": f"{STATIC_SERVER}/{picUrl}",
-            "messageUrl": WEB_SERVER,
+            "picUrl": f"{FILE_SERVER_URL}/{picUrl}",
+            "messageUrl": WEB_APP_URL,
         },
     }
     r = requests.post(req_url, headers=headers, json=json)
