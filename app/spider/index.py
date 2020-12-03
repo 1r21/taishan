@@ -1,5 +1,4 @@
 import os
-from os import error
 import datetime
 
 import pytz

@@ -24,7 +24,7 @@ def application(environ, start_response):
         ("Content-type", "application/json; charset=utf-8"),
         ("Access-Control-Allow-Headers", "*"),
         ("Access-Control-Allow-Origin", "*"),
-        ("Access-Control-Max-Age ", "600"), # cache preflight request 10min
+        ("Access-Control-Max-Age", "600"),  # cache preflight request 10min
     ]
     start_response(status, headers)
     try:
@@ -37,6 +37,7 @@ def application(environ, start_response):
 
 if __name__ == "__main__":
     from wsgiref.simple_server import make_server
+
     with make_server("", 8080, application) as httpd:
         print("Serving on port 8080...")
         httpd.serve_forever()
