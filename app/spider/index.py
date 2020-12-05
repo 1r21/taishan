@@ -14,7 +14,6 @@ today = datetime.datetime.now(tz)
 
 
 base_url = "https://www.pbs.org/newshour/latest"
-# base_url = "http://192.168.8.149:5000/The Latest _ PBS NewsHour.htm"
 
 # 设置重连次数
 requests.adapters.DEFAULT_RETRIES = 15
@@ -89,10 +88,9 @@ def parse_transcript_audio():
     if "source" not in news_wrap:
         return "Can't Fetch File"
 
-    source = news_wrap["source"]
-    title = news_wrap["title"]
-    image_from = "http://192.168.8.149:5000/The%20Latest%20_%20PBS%20NewsHour_files/newswrap15-425x300.jpg"
-    # image_from = news_wrap["image_from"]
+    source = news_wrap.get("source")
+    title = news_wrap.get("title")
+    image_from = news_wrap.get("image_from")
     article_html = etree.HTML(fetch_content(source))
     audioEl = article_html.xpath("//audio/source/@src")
     transcriptEl = article_html.xpath(
@@ -124,7 +122,7 @@ def parse_transcript_audio():
         )
         save_msg = exec_sql(sql, values)
         if save_msg == "Ok":
-            send_message(title=title, content=summary, picUrl=image_url)
+            send_message(title=title, content=summary, picUrl=f"image/{image_url}")
         return save_msg
     return "No File"
 

@@ -5,7 +5,7 @@ LABEL maintainer="iron"
 ENV HTTP_PROXY=
 ENV HTTPS_PROXY=
 ENV UWSGI_PORT=8000
-ENV WEB_APP_ADDR=http://localhost
+ENV WEB_APP_URL=http://localhost
 
 EXPOSE 8000
 

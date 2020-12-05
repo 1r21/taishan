@@ -72,6 +72,8 @@ services:
     image: taishan-web:alpine
     ports:
       - "8090:80"
+    depends_on:
+      - static
     networks:
       - web
     environment: *api-url
@@ -81,6 +83,8 @@ services:
     image: taishan-admin:alpine
     ports:
       - "9000:80"
+    depends_on:
+      - static
     networks:
       - web
     environment: *api-url
