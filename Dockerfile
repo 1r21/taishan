@@ -1,4 +1,4 @@
-FROM uwsgi:python
+FROM heng1025/uwsgi:python
 
 LABEL maintainer="iron"
 
@@ -14,7 +14,7 @@ WORKDIR /taishan
 COPY ./app /taishan/app
 COPY ./static /taishan/static
 COPY ./app.py /taishan/app.py
-COPY ./requirements.txt /taishan/requirements.txt
 COPY ./uwsgi.ini /etc/uwsgi/uwsgi.ini
+COPY ./requirements.txt /taishan/requirements.txt
 
 RUN pip install -r requirements.txt
