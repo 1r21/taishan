@@ -21,7 +21,7 @@ services:
   # uwsgi
   api:
     build: .
-    image: taishan-server:alpine
+    image: server:taishan
     volumes:
       - ./app:/taishan/app
       - ./static:/taishan/static
@@ -69,7 +69,7 @@ services:
 
   # web app
   web:
-    image: taishan-web:alpine
+    image: web:taishan
     ports:
       - "8090:80"
     depends_on:
@@ -80,7 +80,7 @@ services:
 
   # web for admin
   admin:
-    image: taishan-admin:alpine
+    image: admin:taishan
     ports:
       - "9000:80"
     depends_on:
