@@ -1,7 +1,9 @@
 from ..libs.helper import query_all
 from ..libs.decorator import route
-from ..libs.response import show_reponse
+from ..libs.response import Status, show_reponse
+from ..libs.variable import request
 from ..setting import FILE_SERVER_URL
+from ..translate.index import run_translate
 
 
 @route("/")
@@ -43,3 +45,12 @@ def get_news():
         )
 
     return show_reponse(data={"list": data})
+
+
+@route("/api/translate")
+def translate():
+    data = request.get("data")
+    if not data:
+        return show_reponse(code=Status.other, message="param error")
+    result = run_translate(data.get("q"))
+    return show_reponse(data={"list": result})

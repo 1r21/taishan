@@ -12,6 +12,11 @@ DINGDING_PUSH = bool(env.get("DINGDING_PUSH"))
 DINGDING_ROBOT_KEY = env.get("DINGDING_ROBOT_KEY")
 DINGDING_TOKEN = env.get("DINGDING_TOKEN")
 
+# baidu translate
+BAIDU_APPID = env.get("BAIDU_APPID")
+BAIDU_API_KEY = env.get("BAIDU_API_KEY")
+BAIDU_API_SALT = env.get("BAIDU_API_SALT")
+
 # jwt
 TOKEN_SALT = env.get("TOKEN_SALT")
 TOKEN_EXP = 30 * 60

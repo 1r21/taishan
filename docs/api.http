@@ -2,3 +2,10 @@ GET http://localhost:8080
 
 ###
 GET http://localhost:8080/api/news
+
+###
+POST http://localhost:8080/api/translate
+
+{
+    "q": "hello \n world"
+}
