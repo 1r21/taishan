@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS `news` (
     `id` INT(6) NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `title` VARCHAR(255) DEFAULT NULL,
     `transcript` TEXT,
+    `summary` TEXT,
     `audio_url` VARCHAR(255) DEFAULT NULL,
     `image_url` VARCHAR(255) DEFAULT NULL,
     `source` VARCHAR(255) DEFAULT NULL,

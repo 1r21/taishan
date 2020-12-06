@@ -8,6 +8,7 @@ USER_NAME = env.get("USER_NAME")
 PASSWORD = env.get("PASSWORD")
 
 # dingding robot
+DINGDING_PUSH = bool(env.get("DINGDING_PUSH"))
 DINGDING_ROBOT_KEY = env.get("DINGDING_ROBOT_KEY")
 DINGDING_TOKEN = env.get("DINGDING_TOKEN")
 
@@ -27,4 +28,3 @@ HTTPS_PROXY = env.get("HTTPS_PROXY")
 PROXY = None
 if HTTP_PROXY and HTTPS_PROXY:
     PROXY = {"http": HTTPS_PROXY, "https": HTTPS_PROXY}
-

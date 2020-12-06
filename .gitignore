@@ -28,3 +28,4 @@ static/image/*
 
 # useless test
 playground.py
+*.session.sql

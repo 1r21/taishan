@@ -1,5 +1,6 @@
 import os
 import datetime
+from pathlib import Path
 
 import pytz
 import requests
@@ -15,10 +16,11 @@ today = datetime.datetime.now(tz)
 
 base_url = "https://www.pbs.org/newshour/latest"
 
-# 设置重连次数
+# set retries number
 requests.adapters.DEFAULT_RETRIES = 15
 s = requests.session()
-s.keep_alive = False  # 关闭多余连接
+# close useless connect
+s.keep_alive = False
 
 
 def fetch_content(url, type="text"):
@@ -29,22 +31,18 @@ def fetch_content(url, type="text"):
     return r.content
 
 
-def save_audio(url):
+def save_assets(url, type="audio"):
     cur_dir = os.getcwd()
-    path = "pbs_newswrap_" + today.strftime("%Y%m%d") + ".mp3"
-    f = open(os.path.join(cur_dir, "static/audio", path), "wb")
+    ext_name = "mp3" if type == "audio" else "jpg"
+    asset_name = f"pbs_newswrap_{today.strftime('%Y%m%d')}.{ext_name}"
+    asset_path = os.path.join(cur_dir, f"static/{type}", f"{asset_name}")
+    if Path(asset_path).exists():
+        return asset_name
+
+    f = open(asset_path, "wb")
     f.write(fetch_content(url, "byte"))
     f.close()
-    return path
-
-
-def save_image(url):
-    cur_dir = os.getcwd()
-    path = "pbs_newswrap_" + today.strftime("%Y%m%d") + ".jpg"
-    f = open(os.path.join(cur_dir, "static/image", path), "wb")
-    f.write(fetch_content(url, "byte"))
-    f.close()
-    return path
+    return asset_name
 
 
 def parse_list(url=base_url):
@@ -77,42 +75,56 @@ def parse_list(url=base_url):
 
 
 def parse_transcript_audio():
-    # check database
-    f_today = today.strftime("%Y-%m-%d")
-    sql = f"Select `id` from `news` where `date`= %s"
-    article_id = query_size(sql, f_today)
-    if article_id:
-        return "It Exists"
-
     news_wrap = parse_list()
     if "source" not in news_wrap:
-        return "Can't Fetch File"
+        return "There is no news wrap now!"
 
     source = news_wrap.get("source")
     title = news_wrap.get("title")
-    image_from = news_wrap.get("image_from")
+    # check database
+    sql = f"Select `id` from `news` where `title`=%s"
+    article_id = query_size(sql, title)
+    if article_id:
+        return "It Exists"
+
     article_html = etree.HTML(fetch_content(source))
+
     audioEl = article_html.xpath("//audio/source/@src")
     transcriptEl = article_html.xpath(
         '//div[@id="transcript"]/ul[@class="video-transcript"]'
     )
-    transcript = (
-        etree.tostring(transcriptEl[0]).decode()
-        if len(transcriptEl) > 0
-        else "no transcript"
+    summaryEl = article_html.xpath(
+        '//div[@id="transcript"]/div[@class="vt__excerpt body-text"]/p/text()'
     )
-    text_list = etree.HTML(transcript).xpath("//li/div/p/text()")
-    summary = len(text_list) > 0 and text_list[0]
+    audio_from = ""
+    audio_url = ""
+    image_from = ""
+    transcript = ""
+    summary = ""
+    image_url = ""
+    if len(transcriptEl) > 0:
+        transcript = etree.tostring(transcriptEl[0]).decode()
+        text_list = etree.HTML(transcript).xpath("//li/div/p/text()")
+        if len(summaryEl) > 0:
+            summary = summaryEl[0]
+        else:
+            summary = len(text_list) > 0 and text_list[0]
+
     if len(audioEl) > 0:
         audio_from = audioEl[0]
-        audio_url = save_audio(audio_from)
-        image_url = save_image(image_from)
+        audio_url = save_assets(audio_from)
+        image_from = news_wrap.get("image_from")
+        if image_from:
+            image_url = save_assets(image_from, type="image")
+
+    if audio_url and transcript:
         sql = "INSERT INTO `news` \
-        (`title`,`transcript`,`audio_url`, `image_url`,`source`,`audio_from`,`image_from`,`date`) \
-        VALUES (%s, %s, %s, %s, %s, %s, %s,%s)"
+        (`title`,`transcript`,`summary`,`audio_url`, `image_url`,`source`,`audio_from`,`image_from`,`date`) \
+        VALUES (%s, %s, %s, %s,%s, %s, %s, %s,%s)"
         values = (
             title,
             transcript,
+            summary,
             audio_url,
             image_url,
             source,
@@ -122,9 +134,13 @@ def parse_transcript_audio():
         )
         save_msg = exec_sql(sql, values)
         if save_msg == "Ok":
-            send_message(title=title, content=summary, picUrl=f"image/{image_url}")
+            # Dec-05-2020
+            date = today.strftime("%b-%d-%Y")
+            send_message(
+                title=f"{date}:{title}", content=summary, picUrl=f"image/{image_url}"
+            )
         return save_msg
-    return "No File"
+    return "News is still on the way!"
 
 
 if __name__ == "__main__":

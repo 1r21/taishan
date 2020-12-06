@@ -17,22 +17,28 @@ def favicon():
 @route("/api/news")
 def get_news():
     # date desc
-    sql = "Select `id`,`title`,`transcript`,`audio_url`,`image_url` from `news` order by `date` desc"
+    sql = "Select `id`,`title`,`summary`,`transcript`,`audio_url`,`image_url`,`source`,`date` from `news` order by `date` desc"
     news = query_all(sql)
     data = []
     for item in news:
         id = item[0]
         title = item[1]
-        transcript = item[2]
-        audio_url = item[3]
-        image_url = item[4]
+        summary = item[2]
+        transcript = item[3]
+        audio_url = item[4]
+        image_url = item[5]
+        source = item[6]
+        date = item[7]
         data.append(
             dict(
                 id=id,
                 title=title,
+                summary=summary,
                 transcript=transcript,
                 src=FILE_SERVER_URL + "/audio/" + audio_url,
                 cover=FILE_SERVER_URL + "/image/" + image_url,
+                source=source,
+                date=date.strftime("%Y-%m-%d"),
             ),
         )
 

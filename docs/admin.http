@@ -1,25 +1,37 @@
+@baseUrl = http://localhost:8080/admin
+
+ 
 # @name login
-POST http://localhost:8080/admin/user?a=1
+POST {{baseUrl}}/user
 content-type: application/json
 
 {
-    "username": "admin",
-    "password": "admin"
+    "username": "iron9527",
+    "password": "abc1234569"
 }
 
 ###
-@authToken = {{login.response.body.token}}
+@authToken = {{login.response.body.data.token}}
 
-### 
-GET http://localhost:8080/admin/crawl
+###
+GET {{baseUrl}}/crawl
 X-Token: {{authToken}}
 
 
 ###
-@authToken = {{login.response.body.token}}
-POST http://localhost:8080/admin/delete/news
+POST {{baseUrl}}/delete/news
 X-Token: {{authToken}}
 
 {
-    "id": 12
+    "id": 44
+}
+
+
+### 
+
+POST {{baseUrl}}/send/news
+X-Token: {{authToken}}
+
+{
+    "id": 43
 }

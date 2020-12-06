@@ -1,6 +1,6 @@
 import requests
 
-from app.setting import DINGDING_TOKEN, WEB_APP_URL, FILE_SERVER_URL
+from app.setting import DINGDING_PUSH, DINGDING_TOKEN, WEB_APP_URL, FILE_SERVER_URL
 from .compute_sign import compute_sign
 
 webhook = "https://oapi.dingtalk.com/robot/send?access_token="
@@ -10,13 +10,15 @@ headers = {
 }
 
 
-def send_message(title="pbs news wrap", content="pbs", picUrl=None):
+def send_message(title="pbs news wrap", content="pbs news wrap content", picUrl=None):
+    if not DINGDING_PUSH:
+        return "Push Forbidden!"
     result = compute_sign()
     req_url = f"{webhook}{DINGDING_TOKEN}&timestamp={result[0]}&sign={result[1]}"
     json = {
         "msgtype": "link",
         "link": {
-            "text": content,
+            "text": content or "summary",
             "title": title,
             "picUrl": f"{FILE_SERVER_URL}/{picUrl}",
             "messageUrl": WEB_APP_URL,
