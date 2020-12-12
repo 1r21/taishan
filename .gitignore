@@ -13,6 +13,9 @@ __pycache__/
 # venv
 .venv/
 
+# qiniu
+.qiniu*
+
 # static files
 static/audio/*
 static/image/*

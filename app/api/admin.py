@@ -63,7 +63,7 @@ def send_dd_message():
         title = article[1]
         summary = article[2]
         image_url = article[3]
-        date = article[4].strftime("%b-%d-%Y")
+        date = article[4].strftime("%d-%m-%Y")
         message = send_message(
             title=f"{date}:{title}", content=summary, picUrl=f"image/{image_url}"
         )

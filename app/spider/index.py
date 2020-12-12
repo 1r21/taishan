@@ -6,9 +6,10 @@ import pytz
 import requests
 from lxml import etree
 
-from app.setting import PROXY
+from app.setting import PROXY, QINIU_ACCESS_KEY
 from app.libs.helper import exec_sql, query_size
 from app.robot.index import send_message
+from app.qiniu.index import save_file_2_qiniu
 
 tz = pytz.timezone("America/New_York")
 today = datetime.datetime.now(tz)
@@ -38,6 +39,9 @@ def save_assets(url, type="audio"):
     asset_path = os.path.join(cur_dir, f"static/{type}", f"{asset_name}")
     if Path(asset_path).exists():
         return asset_name
+
+    if QINIU_ACCESS_KEY:
+        return save_file_2_qiniu(url, asset_name)
 
     f = open(asset_path, "wb")
     f.write(fetch_content(url, "byte"))
@@ -135,7 +139,7 @@ def parse_transcript_audio():
         save_msg = exec_sql(sql, values)
         if save_msg == "Ok":
             # Dec-05-2020
-            date = today.strftime("%b-%d-%Y")
+            date = today.strftime("%d-%m-%Y")
             send_message(
                 title=f"{date}:{title}", content=summary, picUrl=f"image/{image_url}"
             )

@@ -1,7 +1,7 @@
 import requests
 
 from app.setting import DINGDING_PUSH, DINGDING_TOKEN, WEB_APP_URL, FILE_SERVER_URL
-from .compute_sign import compute_sign
+from .sign import compute_sign
 
 webhook = "https://oapi.dingtalk.com/robot/send?access_token="
 
