@@ -1,13 +1,13 @@
-@baseUrl = http://localhost:8080/admin
+@baseUrl = http://{{host}}:{{port}}/admin
 
- 
+# local environment
 # @name login
 POST {{baseUrl}}/user
 content-type: application/json
 
 {
-    "username": "iron9527",
-    "password": "abc1234569"
+    "username": "{{username}}",
+    "password": "{{password}}"
 }
 
 ###

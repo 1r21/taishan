@@ -25,11 +25,15 @@ s.keep_alive = False
 
 
 def fetch_content(url, type="text"):
-    r = requests.get(url, proxies=PROXY if type != "text" else None, timeout=60)
-    if type == "text":
-        return r.text
+    try:
+        r = requests.get(url, proxies=PROXY if type != "text" else None, timeout=60)
+        if type == "text":
+            return r.text
 
-    return r.content
+        return r.content
+    except Exception as e:
+        raise Exception(f"{e}")
+
 
 
 def save_assets(url, type="audio"):
@@ -138,7 +142,7 @@ def parse_transcript_audio():
         )
         save_msg = exec_sql(sql, values)
         if save_msg == "Ok":
-            # Dec-05-2020
+            # 05-12-2020
             date = today.strftime("%d-%m-%Y")
             send_message(
                 title=f"{date}:{title}", content=summary, picUrl=f"image/{image_url}"

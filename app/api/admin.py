@@ -54,7 +54,7 @@ def delete_news():
 def send_dd_message():
     data = request.get("data")
     if not data:
-        return show_reponse(code=Status.no_auth)
+        return show_reponse(code=Status.other, message="param error")
     article_id = data.get("id")
     sql = f"Select `id`,`title`,`summary`,`image_url`,`date` from `news` where `id`=%s"
     result = query_size(sql, article_id)
