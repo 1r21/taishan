@@ -8,7 +8,7 @@ USER_NAME = env.get("USER_NAME")
 PASSWORD = env.get("PASSWORD")
 
 # dingding robot
-DINGDING_PUSH = bool(env.get("DINGDING_PUSH"))
+DINGDING_PUSH = env.get("DINGDING_PUSH") == 'True'
 DINGDING_ROBOT_KEY = env.get("DINGDING_ROBOT_KEY")
 DINGDING_TOKEN = env.get("DINGDING_TOKEN")
 

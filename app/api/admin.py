@@ -70,7 +70,7 @@ def send_dd_message():
             content=summary,
             picUrl=f"image/{image_url}",
         )
-        r_dict = json.loads(message)
+        r_dict = json.loads(message) if isinstance(message, str) else message
         code = r_dict.get("errcode")
         msg = r_dict.get("errmsg")
         if code == 0:

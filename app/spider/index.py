@@ -6,7 +6,7 @@ import pytz
 import requests
 from lxml import etree
 
-from app.setting import PROXY, QINIU_ACCESS_KEY
+from app.setting import PROXY
 from app.libs.helper import exec_sql, query_size
 from app.robot.index import send_message
 from app.qiniu.index import save_file_2_qiniu
@@ -43,8 +43,9 @@ def save_assets(url, type="audio"):
     if Path(asset_path).exists():
         return asset_name
 
-    if QINIU_ACCESS_KEY:
-        return save_file_2_qiniu(url, asset_name)
+    qiniu_key = save_file_2_qiniu(url, asset_name)
+    if qiniu_key:
+        return qiniu_key
 
     f = open(asset_path, "wb")
     f.write(fetch_content(url, "byte"))

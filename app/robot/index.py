@@ -12,7 +12,7 @@ headers = {
 
 def send_message(id=None, title="pbs", content="interesting news", picUrl=None):
     if not DINGDING_PUSH:
-        return "Push Forbidden!"
+        return {"errmsg": "Push Forbidden!"}
     result = compute_sign()
     req_url = f"{webhook}{DINGDING_TOKEN}&timestamp={result[0]}&sign={result[1]}"
     json = {

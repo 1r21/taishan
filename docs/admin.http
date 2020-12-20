@@ -33,5 +33,5 @@ POST {{baseUrl}}/send/news
 X-Token: {{authToken}}
 
 {
-    "id": 43
+    "id": 65
 }

@@ -18,7 +18,6 @@ def favicon():
 
 @route("/api/news")
 def get_news():
-    print(request)
     # date desc
     sql = "Select `id`,`title`,`summary`,`transcript`,`audio_url`,`image_url`,`source`,`date` from `news` order by `date` desc"
     news = query_all(sql)
