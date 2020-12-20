@@ -10,7 +10,7 @@ headers = {
 }
 
 
-def send_message(title="pbs news wrap", content="pbs news wrap content", picUrl=None):
+def send_message(id=None, title="pbs", content="interesting news", picUrl=None):
     if not DINGDING_PUSH:
         return "Push Forbidden!"
     result = compute_sign()
@@ -18,10 +18,10 @@ def send_message(title="pbs news wrap", content="pbs news wrap content", picUrl=
     json = {
         "msgtype": "link",
         "link": {
-            "text": content or "summary",
+            "text": content,
             "title": title,
             "picUrl": f"{FILE_SERVER_URL}/{picUrl}",
-            "messageUrl": WEB_APP_URL,
+            "messageUrl": f"{WEB_APP_URL}/detail/{id}" if id else WEB_APP_URL,
         },
     }
     r = requests.post(req_url, headers=headers, json=json)

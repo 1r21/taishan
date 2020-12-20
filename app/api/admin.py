@@ -65,7 +65,10 @@ def send_dd_message():
         image_url = article[3]
         date = article[4].strftime("%d-%m-%Y")
         message = send_message(
-            title=f"{date}:{title}", content=summary, picUrl=f"image/{image_url}"
+            id=article_id,
+            title=f"{date}:{title}",
+            content=summary,
+            picUrl=f"image/{image_url}",
         )
         r_dict = json.loads(message)
         code = r_dict.get("errcode")

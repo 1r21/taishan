@@ -35,7 +35,6 @@ def fetch_content(url, type="text"):
         raise Exception(f"{e}")
 
 
-
 def save_assets(url, type="audio"):
     cur_dir = os.getcwd()
     ext_name = "mp3" if type == "audio" else "jpg"
@@ -142,11 +141,18 @@ def parse_transcript_audio():
         )
         save_msg = exec_sql(sql, values)
         if save_msg == "Ok":
-            # 05-12-2020
-            date = today.strftime("%d-%m-%Y")
-            send_message(
-                title=f"{date}:{title}", content=summary, picUrl=f"image/{image_url}"
-            )
+            q_sql = f"Select `id` where `date`=%s"
+            article_ids = query_size(q_sql, today)
+            if article_ids:
+                article_id = article_ids[0]
+                # 05-12-2020
+                date = today.strftime("%d-%m-%Y")
+                return send_message(
+                    id=article_id,
+                    title=f"{date}:{title}",
+                    content=summary,
+                    picUrl=f"image/{image_url}",
+                )
         return save_msg
     return "News is still on the way!"
 
