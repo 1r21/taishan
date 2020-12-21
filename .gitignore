@@ -17,8 +17,8 @@ __pycache__/
 .qiniu*
 
 # static files
-static/audio/*
-static/image/*
+static/audio/*.mp3
+static/image/*.jpg
 
 # secure config
 **/**/secure.py
