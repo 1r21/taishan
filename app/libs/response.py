@@ -10,9 +10,9 @@ class Status(Enum):
 
 
 class Message(Enum):
-    success = "success"
-    no_auth = "auth fail"
-    other = "error happened"
+    success = "Success"
+    no_auth = "Auth Fail"
+    other = "Error Happened"
 
 
 def show_reponse(code=Status.success, data=None, message=None):

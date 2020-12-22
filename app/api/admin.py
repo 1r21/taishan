@@ -29,6 +29,7 @@ def login():
 
 
 @route("/admin/crawl")
+@login_required
 def start_crawl():
     message = parse_transcript_audio()
     code = Status.success if message == "Ok" else Status.other
@@ -52,27 +53,24 @@ def delete_news():
 @login_required
 def send_dd_message():
     data = request.get("data")
+    err_code = Status.other
+    err_message = "News is not exist!"
     if not data:
-        return show_reponse(code=Status.other, message="param error")
+        return show_reponse(code=err_code, message="Param Error")
     article_id = data.get("id")
-    sql = f"Select `id`,`title`,`summary`,`image_url`,`date` from `news` where `id`=%s"
+    sql = f"Select `date`,`title`,`summary`,`image_url` from `news` where `id`=%s"
     result = query_size(sql, article_id)
     if result:
         article = result[0]
-        title = article[1]
-        summary = article[2]
-        image_url = article[3]
-        date = article[4].strftime("%d-%m-%Y")
-        message = send_message(
+        f_date = article[0].strftime("%d-%m-%Y")
+        r_dict = send_message(
             id=article_id,
-            title=f"{date}:{title}",
-            content=summary,
-            picUrl=f"image/{image_url}",
+            title=f"{f_date}:{article[1]}",
+            content=article[2],
+            picUrl=f"image/{article[3]}",
         )
-        r_dict = json.loads(message) if isinstance(message, str) else message
         code = r_dict.get("errcode")
-        msg = r_dict.get("errmsg")
+        err_message = r_dict.get("errmsg")
         if code == 0:
-            return show_reponse(code=Status.success, message=msg)
-        return show_reponse(code=Status.other, message=msg)
-    return show_reponse(code=Status.other, message="News is not exist!")
+            err_code = Status.success
+    return show_reponse(code=err_code, message=err_message)

@@ -1,3 +1,4 @@
+import json
 import requests
 
 from app.setting import DINGDING_PUSH, DINGDING_TOKEN, WEB_APP_URL, FILE_SERVER_URL
@@ -15,7 +16,7 @@ def send_message(id=None, title="pbs", content="interesting news", picUrl=None):
         return {"errmsg": "Push Forbidden!"}
     result = compute_sign()
     req_url = f"{webhook}{DINGDING_TOKEN}&timestamp={result[0]}&sign={result[1]}"
-    json = {
+    data = {
         "msgtype": "link",
         "link": {
             "text": content,
@@ -24,8 +25,11 @@ def send_message(id=None, title="pbs", content="interesting news", picUrl=None):
             "messageUrl": f"{WEB_APP_URL}/detail/{id}" if id else WEB_APP_URL,
         },
     }
-    r = requests.post(req_url, headers=headers, json=json)
-    return r.text
+    try:
+        r = requests.post(req_url, headers=headers, json=data)
+        return json.loads(r.text)
+    except Exception as e:
+        raise Exception(f"{e}")
 
 
 if __name__ == "__main__":

@@ -27,7 +27,7 @@ def exec_sql(sql, values):
         return "Ok"
     except Exception as e:
         connection.rollback()
-        return f"{e}"
+        raise Exception(f"{e}")
     finally:
         connection.close()
 

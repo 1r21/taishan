@@ -12,7 +12,6 @@ from app.robot.index import send_message
 from app.qiniu.index import save_file_2_qiniu
 
 tz = pytz.timezone("America/New_York")
-today = datetime.datetime.now(tz).date()
 
 base_url = "https://www.pbs.org/newshour/latest"
 
@@ -34,10 +33,10 @@ def fetch_content(url, type="text"):
         raise Exception(f"{e}")
 
 
-def save_assets(url, type="audio"):
+def save_assets(url, date, type="audio"):
     cur_dir = os.getcwd()
     ext_name = "mp3" if type == "audio" else "jpg"
-    asset_name = f"pbs_newswrap_{today.strftime('%Y%m%d')}.{ext_name}"
+    asset_name = f"pbs_newswrap_{date.strftime('%Y%m%d')}.{ext_name}"
     asset_path = os.path.join(cur_dir, f"static/{type}", f"{asset_name}")
     if Path(asset_path).exists():
         return asset_name
@@ -109,6 +108,7 @@ def parse_transcript_audio():
     transcript = ""
     summary = ""
     image_url = ""
+    today = datetime.datetime.now(tz).date()
     if len(transcriptEl) > 0:
         transcript = etree.tostring(transcriptEl[0]).decode()
         text_list = etree.HTML(transcript).xpath("//li/div/p/text()")
@@ -119,10 +119,10 @@ def parse_transcript_audio():
 
     if len(audioEl) > 0:
         audio_from = audioEl[0]
-        audio_url = save_assets(audio_from)
+        audio_url = save_assets(audio_from, today)
         image_from = news_wrap.get("image_from")
         if image_from:
-            image_url = save_assets(image_from, type="image")
+            image_url = save_assets(image_from, today, type="image")
 
     if audio_url and transcript:
         sql = "INSERT INTO `news` \
@@ -139,28 +139,36 @@ def parse_transcript_audio():
             image_from,
             today,
         )
-        save_msg = exec_sql(sql, values)
-        if save_msg == "Ok":
-            q_sql = f"Select `id` from `news` where `date`=%s"
-            article_ids = query_size(q_sql, today)
-            if article_ids:
-                article_id = article_ids[0]
-                # 05-12-2020
-                date = today.strftime("%d-%m-%Y")
-                return send_message(
-                    id=article_id,
-                    title=f"{date}:{title}",
-                    content=summary,
-                    picUrl=f"image/{image_url}",
-                )
-        return save_msg
+        return exec_sql(sql, values)
     return "News is still on the way!"
+
+
+def push_news_by_date(date):
+    q_sql = f"Select `id`,`title`,`summary`,`image_url` from `news` where `date`=%s"
+    result = query_size(q_sql, date)
+    err_msg = {"errmsg": "Push Fail!"}
+    if result:
+        # 05-12-2020
+        article = result[0]
+        f_date = date.strftime("%d-%m-%Y")
+        err_msg = send_message(
+            id=article[0],
+            title=f"{f_date}:{article[1]}",
+            content=article[2],
+            picUrl=f"image/{article[3]}",
+        )
+    return err_msg
 
 
 if __name__ == "__main__":
     try:
         print("Start Crawl...")
-        message = parse_transcript_audio()
-        print(f"Crawl Result: {message}")
+        result = parse_transcript_audio()
+        print(f"Crawl Result: {result}")
+        if result == "Ok":
+            today = datetime.datetime.now(tz).date()
+            # print(today + datetime.timedelta(-1))
+            r_dict = push_news_by_date(today)
+            print(f"Push Result: {r_dict.get('errmsg')}")
     except Exception as e:
         print(f"Error: {e}")
