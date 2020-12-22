@@ -12,8 +12,7 @@ from app.robot.index import send_message
 from app.qiniu.index import save_file_2_qiniu
 
 tz = pytz.timezone("America/New_York")
-today = datetime.datetime.now(tz)
-
+today = datetime.datetime.now(tz).date()
 
 base_url = "https://www.pbs.org/newshour/latest"
 
@@ -142,7 +141,7 @@ def parse_transcript_audio():
         )
         save_msg = exec_sql(sql, values)
         if save_msg == "Ok":
-            q_sql = f"Select `id` where `date`=%s"
+            q_sql = f"Select `id` from `news` where `date`=%s"
             article_ids = query_size(q_sql, today)
             if article_ids:
                 article_id = article_ids[0]
@@ -164,4 +163,4 @@ if __name__ == "__main__":
         message = parse_transcript_audio()
         print(f"Crawl Result: {message}")
     except Exception as e:
-        print(f"{e}")
+        print(f"Error: {e}")

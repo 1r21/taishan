@@ -4,6 +4,9 @@ from urllib.parse import parse_qs
 from app.libs.variable import ROUTE, request
 from app.libs.response import show_reponse, Status
 
+# https://stackoverflow.com/questions/43393764/python-3-6-project-structure-leads-to-runtimewarning
+# registy router first (can't import in app/__init__.py)
+from app.api import *
 
 def application(environ, start_response):
     url = environ.get("PATH_INFO")

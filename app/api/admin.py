@@ -3,7 +3,7 @@ import time
 import json
 
 import jwt
-from ..setting import TOKEN_EXP, TOKEN_SALT, DINGDING_PUSH
+from ..setting import TOKEN_EXP, TOKEN_SALT
 from ..libs.helper import exec_sql, query_size, make_password
 from ..libs.decorator import route, login_required
 from ..libs.response import show_reponse, Status
@@ -29,7 +29,6 @@ def login():
 
 
 @route("/admin/crawl")
-@login_required
 def start_crawl():
     message = parse_transcript_audio()
     code = Status.success if message == "Ok" else Status.other

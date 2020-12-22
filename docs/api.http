@@ -1,12 +1,9 @@
 @baseUrl = http://{{host}}:{{port}}/api
 
-GET http://localhost:8080
+GET http://{{host}}:{{port}}
 
 ###
 GET {{baseUrl}}/news
-
-###
-GET {{baseUrl}}/news/59
 
 ###
 POST {{baseUrl}}/translate
