@@ -15,6 +15,8 @@ tz = pytz.timezone("America/New_York")
 
 base_url = "https://www.pbs.org/newshour/latest"
 
+news_wrap = {}
+
 # set retries number
 requests.adapters.DEFAULT_RETRIES = 15
 s = requests.session()
@@ -25,10 +27,7 @@ s.keep_alive = False
 def fetch_content(url, type="text"):
     try:
         r = requests.get(url, proxies=PROXY if type != "text" else None, timeout=60)
-        if type == "text":
-            return r.text
-
-        return r.content
+        return r.text if type == "text" else r.content
     except Exception as e:
         raise Exception(f"{e}")
 
@@ -51,50 +50,51 @@ def save_assets(url, date, type="audio"):
     return asset_name
 
 
-def parse_list(url=base_url):
-    content = fetch_content(url)
-    news_list_html = etree.HTML(content)
-    articles = news_list_html.xpath(
-        '//div[@class="latest__wrapper"]/article/div[@class="card-timeline__col-right"]'
-    )
+def parse_list(url=base_url, date=""):
+    if news_wrap.get("date") != date:
+        content = fetch_content(url)
+        news_list_html = etree.HTML(content)
+        articles = news_list_html.xpath(
+            '//div[@class="latest__wrapper"]/article/div[@class="card-timeline__col-right"]'
+        )
 
-    news_wrap = {}
-    for item in articles:
-        article_html = etree.HTML(etree.tostring(item).decode())
-        titleEl = article_html.xpath('//a[@class="card-timeline__title"]/span')
-        title = len(titleEl) > 0 and titleEl[0].text
-        title = title and title.replace("\n", "").strip()
-        if title and title.lower().find("news wrap") != -1:
-            articleEl = article_html.xpath('//a[@class="card-timeline__title"]')
-            imageEl = article_html.xpath('//a[@class="card-timeline__img-link"]/img')
-            article_from = len(articleEl) > 0 and articleEl[0].get("href")
-            image_from = len(imageEl) > 0 and imageEl[0].get("src")
+        for item in articles:
+            article_html = etree.HTML(etree.tostring(item).decode())
+            titleEl = article_html.xpath('//a[@class="card-timeline__title"]/span')
+            title = len(titleEl) > 0 and titleEl[0].text
+            title = title and title.replace("\n", "").strip()
+            if title and title.lower().find("news wrap") != -1:
+                articleEl = article_html.xpath('//a[@class="card-timeline__title"]')
+                imageEl = article_html.xpath(
+                    '//a[@class="card-timeline__img-link"]/img'
+                )
+                article_from = len(articleEl) > 0 and articleEl[0].get("href")
+                image_from = len(imageEl) > 0 and imageEl[0].get("src")
+                image_url = save_assets(image_from, date, type="image")
 
-            news_wrap["title"] = title
-            if article_from:
+                news_wrap["title"] = title
+                news_wrap["image_url"] = image_url
                 news_wrap["source"] = article_from
-            if image_from:
                 news_wrap["image_from"] = image_from
-            break
-
-    return news_wrap
+                news_wrap["date"] = date
+                break
 
 
 def parse_transcript_audio():
-    news_wrap = parse_list()
-    if "source" not in news_wrap:
-        return "There is no news wrap now!"
-
-    source = news_wrap.get("source")
-    title = news_wrap.get("title")
     # check database
     sql = f"Select `id` from `news` where `title`=%s"
-    article_id = query_size(sql, title)
-    if article_id:
+    article_ids = query_size(sql, news_wrap.get("title"))
+    if article_ids:
         return "It Exists"
 
-    article_html = etree.HTML(fetch_content(source))
+    today = datetime.datetime.now(tz).date()
+    parse_list(date=today)
 
+    source = news_wrap.get("source")
+    if not source:
+        return "News is still on the way!"
+
+    article_html = etree.HTML(fetch_content(source))
     audioEl = article_html.xpath("//audio/source/@src")
     transcriptEl = article_html.xpath(
         '//div[@id="transcript"]/ul[@class="video-transcript"]'
@@ -102,13 +102,12 @@ def parse_transcript_audio():
     summaryEl = article_html.xpath(
         '//div[@id="transcript"]/div[@class="vt__excerpt body-text"]/p/text()'
     )
+
+    summary = ""
+    transcript = ""
     audio_from = ""
     audio_url = ""
-    image_from = ""
-    transcript = ""
-    summary = ""
-    image_url = ""
-    today = datetime.datetime.now(tz).date()
+
     if len(transcriptEl) > 0:
         transcript = etree.tostring(transcriptEl[0]).decode()
         text_list = etree.HTML(transcript).xpath("//li/div/p/text()")
@@ -120,23 +119,20 @@ def parse_transcript_audio():
     if len(audioEl) > 0:
         audio_from = audioEl[0]
         audio_url = save_assets(audio_from, today)
-        image_from = news_wrap.get("image_from")
-        if image_from:
-            image_url = save_assets(image_from, today, type="image")
 
     if audio_url and transcript:
         sql = "INSERT INTO `news` \
         (`title`,`transcript`,`summary`,`audio_url`, `image_url`,`source`,`audio_from`,`image_from`,`date`) \
         VALUES (%s, %s, %s, %s,%s, %s, %s, %s,%s)"
         values = (
-            title,
+            news_wrap.get("title"),
             transcript,
             summary,
             audio_url,
-            image_url,
+            news_wrap.get("image_url"),
             source,
             audio_from,
-            image_from,
+            news_wrap.get("image_from"),
             today,
         )
         return exec_sql(sql, values)
@@ -166,9 +162,7 @@ if __name__ == "__main__":
         result = parse_transcript_audio()
         print(f"Crawl Result: {result}")
         if result == "Ok":
-            today = datetime.datetime.now(tz).date()
-            # print(today + datetime.timedelta(-1))
-            r_dict = push_news_by_date(today)
+            r_dict = push_news_by_date(datetime.datetime.now(tz).date())
             print(f"Push Result: {r_dict.get('errmsg')}")
     except Exception as e:
         print(f"Error: {e}")
