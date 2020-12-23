@@ -83,7 +83,7 @@ def parse_list(url=base_url, date=""):
 def parse_transcript_audio():
     # check database
     sql = f"Select `id` from `news` where `title`=%s"
-    article_ids = query_size(sql, news_wrap.get("title"))
+    article_ids = query_size(sql, news_wrap.get("title") or '')
     if article_ids:
         return "It Exists"
 
