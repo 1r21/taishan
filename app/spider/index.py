@@ -73,8 +73,8 @@ def parse_list(url=base_url, date=""):
                 image_url = save_assets(image_from, date, type="image")
 
                 news_wrap["title"] = title
-                news_wrap["image_url"] = image_url
                 news_wrap["source"] = article_from
+                news_wrap["image_url"] = image_url
                 news_wrap["image_from"] = image_from
                 news_wrap["date"] = date
                 break
@@ -82,17 +82,19 @@ def parse_list(url=base_url, date=""):
 
 def parse_transcript_audio():
     # check database
-    sql = f"Select `id` from `news` where `title`=%s"
-    article_ids = query_size(sql, news_wrap.get("title") or '')
-    if article_ids:
+    today = datetime.datetime.now(tz).date()
+    sql = f"Select `id` from `news` where `date`=%s"
+    articles = query_size(sql, today)
+    if articles:
         return "It Exists"
 
-    today = datetime.datetime.now(tz).date()
     parse_list(date=today)
 
     source = news_wrap.get("source")
+    err_msg = "News is still on the way!"
+
     if not source:
-        return "News is still on the way!"
+        return err_msg
 
     article_html = etree.HTML(fetch_content(source))
     audioEl = article_html.xpath("//audio/source/@src")
@@ -136,7 +138,7 @@ def parse_transcript_audio():
             today,
         )
         return exec_sql(sql, values)
-    return "News is still on the way!"
+    return err_msg
 
 
 def push_news_by_date(date):
