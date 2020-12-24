@@ -51,33 +51,30 @@ def save_assets(url, date, type="audio"):
 
 
 def parse_list(url=base_url, date=""):
-    if news_wrap.get("date") != date:
-        content = fetch_content(url)
-        news_list_html = etree.HTML(content)
-        articles = news_list_html.xpath(
-            '//div[@class="latest__wrapper"]/article/div[@class="card-timeline__col-right"]'
-        )
+    content = fetch_content(url)
+    news_list_html = etree.HTML(content)
+    articles = news_list_html.xpath(
+        '//div[@class="latest__wrapper"]/article/div[@class="card-timeline__col-right"]'
+    )
 
-        for item in articles:
-            article_html = etree.HTML(etree.tostring(item).decode())
-            titleEl = article_html.xpath('//a[@class="card-timeline__title"]/span')
-            title = len(titleEl) > 0 and titleEl[0].text
-            title = title and title.replace("\n", "").strip()
-            if title and title.lower().find("news wrap") != -1:
-                articleEl = article_html.xpath('//a[@class="card-timeline__title"]')
-                imageEl = article_html.xpath(
-                    '//a[@class="card-timeline__img-link"]/img'
-                )
-                article_from = len(articleEl) > 0 and articleEl[0].get("href")
-                image_from = len(imageEl) > 0 and imageEl[0].get("src")
-                image_url = save_assets(image_from, date, type="image")
+    for item in articles:
+        article_html = etree.HTML(etree.tostring(item).decode())
+        titleEl = article_html.xpath('//a[@class="card-timeline__title"]/span')
+        title = len(titleEl) > 0 and titleEl[0].text
+        title = title and title.replace("\n", "").strip()
+        if title and title.lower().find("news wrap") != -1:
+            articleEl = article_html.xpath('//a[@class="card-timeline__title"]')
+            imageEl = article_html.xpath('//a[@class="card-timeline__img-link"]/img')
+            article_from = len(articleEl) > 0 and articleEl[0].get("href")
+            image_from = len(imageEl) > 0 and imageEl[0].get("src")
+            image_url = save_assets(image_from, date, type="image")
 
-                news_wrap["title"] = title
-                news_wrap["source"] = article_from
-                news_wrap["image_url"] = image_url
-                news_wrap["image_from"] = image_from
-                news_wrap["date"] = date
-                break
+            news_wrap["title"] = title
+            news_wrap["source"] = article_from
+            news_wrap["image_url"] = image_url
+            news_wrap["image_from"] = image_from
+            news_wrap["date"] = date
+            break
 
 
 def parse_transcript_audio():
@@ -88,7 +85,8 @@ def parse_transcript_audio():
     if articles:
         return "It Exists"
 
-    parse_list(date=today)
+    if news_wrap.get("date") != today:
+        parse_list(date=today)
 
     source = news_wrap.get("source")
     err_msg = "News is still on the way!"
