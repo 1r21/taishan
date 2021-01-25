@@ -1,36 +1,51 @@
-# This is a basic workflow to help you get started with Actions
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
-name: Crawl
+name: Crawl information
 
-# Controls when the action will run. 
 on:
-  # Triggers the workflow on push or pull request events but only for the main branch
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+      branches:
+        - main
+  schedule:
+    # At every 20th minute from 0 through 59 past every hour from 8 through 10 
+    # on every day-of-week from Sunday through Saturday.
+    - cron: "0/20 8-10 * * 0-6"
 
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   build:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
 
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
-
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
+      - name: Install dependencies
         run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Create env file
+        run: |
+          touch .env
+          # mysql
+          echo HOST=${{ secrets.HOST }} >> .env
+          echo PORT=${{ secrets.PORT }} >> .env
+          echo USER_NAME=${{ secrets.USER_NAME }} >> .env
+          echo PASSWORD=${{ secrets.PASSWORD }} >> .env
+          # dingding
+          echo DINGDING_PUSH=True >> .env
+          echo DINGDING_ROBOT_KEY=${{ secrets.DINGDING_ROBOT_KEY }} >> .env
+          echo DINGDING_TOKEN=${{ secrets.DINGDING_TOKEN }} >> .env
+          # qiniu
+          echo QINIU_ACCESS_KEY=${{ secrets.QINIU_ACCESS_KEY }} >> .env
+          echo QINIU_SECRET_KEY=${{ secrets.QINIU_SECRET_KEY }} >> .env
+          echo QINIU_BUCKET_NAME=${{ secrets.QINIU_BUCKET_NAME }} >> .env
+
+      - name: Crawl news
+        run: python -m app.spider.index
+          
+          
