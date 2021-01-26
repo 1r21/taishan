@@ -4,9 +4,6 @@
 name: Crawl information
 
 on:
-  push:
-    branches:
-      - main
   schedule:
     # At every 20th minute from 0 through 59 past every hour from 8 through 10
     # on every day-of-week from Sunday through Saturday.
@@ -21,10 +18,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Set up Python 3.9
+      - name: Set up Python 3.8
         uses: actions/setup-python@v2
         with:
-          python-version: 3.9
+          python-version: 3.8
 
       - name: Install dependencies
         run: |
@@ -46,5 +43,9 @@ jobs:
           QINIU_SECRET_KEY: ${{ secrets.QINIU_SECRET_KEY }}
           QINIU_BUCKET_NAME: ${{ secrets.QINIU_BUCKET_NAME }}
           # dingding
+          DINGDING_PUSH: ${{ secrets.DINGDING_PUSH }}
           DINGDING_TOKEN: ${{ secrets.DINGDING_TOKEN }}
           DINGDING_ROBOT_KEY: ${{ secrets.DINGDING_ROBOT_KEY }}
+          # website
+          WEB_APP_URL: ${{ secrets.WEB_APP_URL }}
+          FILE_SERVER_URL: ${{ secrets.FILE_SERVER_URL }}
