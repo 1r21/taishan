@@ -5,19 +5,22 @@ name: Crawl information
 
 on:
   push:
-      branches:
-        - main
+    branches:
+      - main
   schedule:
-    # At every 20th minute from 0 through 59 past every hour from 8 through 10 
+    # At every 20th minute from 0 through 59 past every hour from 8 through 10
     # on every day-of-week from Sunday through Saturday.
-    - cron: "0/20 8-10 * * 0-6"
+    - cron: "0/20 0-2 * * 0-6"
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    # choose an environment
+    environment: crawl
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2
+
       - name: Set up Python 3.9
         uses: actions/setup-python@v2
         with:
@@ -28,24 +31,20 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      - name: Create env file
-        run: |
-          touch .env
-          # mysql
-          echo HOST=${{ secrets.HOST }} >> .env
-          echo PORT=${{ secrets.PORT }} >> .env
-          echo USER_NAME=${{ secrets.USER_NAME }} >> .env
-          echo PASSWORD=${{ secrets.PASSWORD }} >> .env
-          # dingding
-          echo DINGDING_PUSH=True >> .env
-          echo DINGDING_ROBOT_KEY=${{ secrets.DINGDING_ROBOT_KEY }} >> .env
-          echo DINGDING_TOKEN=${{ secrets.DINGDING_TOKEN }} >> .env
-          # qiniu
-          echo QINIU_ACCESS_KEY=${{ secrets.QINIU_ACCESS_KEY }} >> .env
-          echo QINIU_SECRET_KEY=${{ secrets.QINIU_SECRET_KEY }} >> .env
-          echo QINIU_BUCKET_NAME=${{ secrets.QINIU_BUCKET_NAME }} >> .env
-
       - name: Crawl news
-        run: python -m app.spider.index
-          
-          
+        run: |
+          python -m app.spider.index
+        env:
+          # mysql
+          HOST: ${{ secrets.HOST }}
+          PORT: ${{ secrets.PORT }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          USER_NAME: ${{ secrets.USER_NAME }}
+          PASSWORD: ${{ secrets.PASSWORD }}
+          # qiniu
+          QINIU_ACCESS_KEY: ${{ secrets.QINIU_ACCESS_KEY }}
+          QINIU_SECRET_KEY: ${{ secrets.QINIU_SECRET_KEY }}
+          QINIU_BUCKET_NAME: ${{ secrets.QINIU_BUCKET_NAME }}
+          # dingding
+          DINGDING_TOKEN: ${{ secrets.DINGDING_TOKEN }}
+          DINGDING_ROBOT_KEY: ${{ secrets.DINGDING_ROBOT_KEY }}

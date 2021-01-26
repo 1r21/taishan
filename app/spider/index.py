@@ -40,13 +40,13 @@ def save_assets(url, date, type="audio"):
     if Path(asset_path).exists():
         return asset_name
 
-    qiniu_key = save_file_2_qiniu(url, asset_name)
-    if qiniu_key:
-        return qiniu_key
-
     f = open(asset_path, "wb")
     f.write(fetch_content(url, "byte"))
     f.close()
+
+    # save qiniu
+    save_file_2_qiniu(asset_path, f"{type}/{asset_name}")
+    
     return asset_name
 
 
