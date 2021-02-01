@@ -10,12 +10,12 @@ from app.setting import PROXY
 from app.libs.helper import exec_sql, query_size
 from app.robot.index import send_message
 from app.qiniu.index import save_file_2_qiniu
+from app.weixin.index import upload_material, add_material
 
 tz = pytz.timezone("America/New_York")
 
-base_url = "https://www.pbs.org/newshour/latest"
-
-news_wrap = {}
+# base_url = "https://www.pbs.org/newshour/latest"
+base_url = "http://192.168.8.125:5000/The%20Latest%20_%20PBS%20NewsHour.htm"
 
 # set retries number
 requests.adapters.DEFAULT_RETRIES = 15
@@ -29,24 +29,33 @@ def fetch_content(url, type="text"):
         r = requests.get(url, proxies=PROXY if type != "text" else None, timeout=60)
         return r.text if type == "text" else r.content
     except Exception as e:
-        raise Exception(f"{e}")
+        raise Exception(f"Fetch Fail: {e}")
 
 
-def save_assets(url, date, type="audio"):
+def save_assets(url, date, file_type="audio"):
     cur_dir = os.getcwd()
-    ext_name = "mp3" if type == "audio" else "jpg"
+    ext_name = "mp3" if file_type == "audio" else "jpg"
     asset_name = f"pbs_newswrap_{date.strftime('%Y%m%d')}.{ext_name}"
-    asset_path = os.path.join(cur_dir, f"static/{type}", f"{asset_name}")
-    if Path(asset_path).exists():
-        return asset_name
+    asset_path = os.path.join(cur_dir, f"static/{file_type}", f"{asset_name}")
 
-    f = open(asset_path, "wb")
-    f.write(fetch_content(url, "byte"))
-    f.close()
+    if not Path(asset_path).exists():
+        f = open(asset_path, "wb")
+        f.write(fetch_content(url, "byte"))
+        f.close()
 
-    # save qiniu
-    save_file_2_qiniu(asset_path, f"{type}/{asset_name}")
-    
+    try:
+        # save qiniu
+        save_file_2_qiniu(asset_path, f"{file_type}/{asset_name}")
+
+        # save weixin
+        if file_type == "audio":
+            new_filename = f"{date.strftime('%d-%m-%Y')}.{ext_name}"
+            dstFile = os.path.join(cur_dir, f"static/{file_type}", f"{new_filename}")
+            os.rename(asset_path,dstFile)
+            upload_material(dstFile, "voice")
+    except Exception as e:
+        print("Save Err: ", e)
+
     return asset_name
 
 
@@ -56,7 +65,7 @@ def parse_list(url=base_url, date=""):
     articles = news_list_html.xpath(
         '//div[@class="latest__wrapper"]/article/div[@class="card-timeline__col-right"]'
     )
-
+    news_wrap = {}
     for item in articles:
         article_html = etree.HTML(etree.tostring(item).decode())
         titleEl = article_html.xpath('//a[@class="card-timeline__title"]/span')
@@ -67,14 +76,14 @@ def parse_list(url=base_url, date=""):
             imageEl = article_html.xpath('//a[@class="card-timeline__img-link"]/img')
             article_from = len(articleEl) > 0 and articleEl[0].get("href")
             image_from = len(imageEl) > 0 and imageEl[0].get("src")
-            image_url = save_assets(image_from, date, type="image")
+            image_url = save_assets(image_from, date, file_type="image")
 
             news_wrap["title"] = title
             news_wrap["source"] = article_from
             news_wrap["image_url"] = image_url
             news_wrap["image_from"] = image_from
-            news_wrap["date"] = date
             break
+    return news_wrap
 
 
 def parse_transcript_audio():
@@ -83,17 +92,14 @@ def parse_transcript_audio():
     sql = f"Select `id` from `news` where `date`=%s"
     articles = query_size(sql, today)
     if articles:
-        return "It Exists"
+        return "News Exists"
 
-    if news_wrap.get("date") != today:
-        parse_list(date=today)
-
+    news_wrap = parse_list(date=today)
     source = news_wrap.get("source")
     err_msg = "News is still on the way!"
 
     if not source:
         return err_msg
-
     article_html = etree.HTML(fetch_content(source))
     audioEl = article_html.xpath("//audio/source/@src")
     transcriptEl = article_html.xpath(
@@ -135,7 +141,7 @@ def parse_transcript_audio():
             news_wrap.get("image_from"),
             today,
         )
-        return exec_sql(sql, values)
+        # return exec_sql(sql, values)
     return err_msg
 
 
@@ -162,7 +168,12 @@ if __name__ == "__main__":
         result = parse_transcript_audio()
         print(f"Crawl Result: {result}")
         if result == "Ok":
-            r_dict = push_news_by_date(datetime.datetime.now(tz).date())
+            today = datetime.datetime.now(tz).date()
+            r_dict = push_news_by_date(today)
             print(f"Push Result: {r_dict.get('errmsg')}")
+            asset_name = f"pbs_newswrap_{today.strftime('%Y%m%d')}.jpg"
+            asset_path = f"{os.getcwd()}/static/image/{asset_name}"
+            wx_dict = add_material(today, asset_path)
+            print(f"Add WX Materal: {wx_dict.get('media_id')}")
     except Exception as e:
         print(f"Error: {e}")

@@ -2,6 +2,7 @@ import hashlib
 import pymysql
 from app.setting import HOST, PORT, USER_NAME, PASSWORD, DB_NAME, TOKEN_SALT
 
+
 def create_connection():
     # Connect to the database
     connection = pymysql.connect(
@@ -15,7 +16,7 @@ def create_connection():
     return connection
 
 
-def exec_sql(sql, values):
+def exec_sql(sql, values, require_last_id=False):
     connection = create_connection()
     try:
         with connection.cursor() as cursor:
@@ -24,6 +25,8 @@ def exec_sql(sql, values):
             cursor.execute(sql, values)
         # save changes.
         connection.commit()
+        if require_last_id:
+            return cursor.lastrowid
         return "Ok"
     except Exception as e:
         connection.rollback()

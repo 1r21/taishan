@@ -8,6 +8,7 @@ from app.libs.response import show_reponse, Status
 # registy router first (can't import in app/__init__.py)
 from app.api import *
 
+
 def application(environ, start_response):
     url = environ.get("PATH_INFO")
     method = environ.get("REQUEST_METHOD")
@@ -19,8 +20,12 @@ def application(environ, start_response):
     global request
     request["headers"] = headers
     request["qs"] = parse_qs(qs)
-    if method.lower() == "post":
-        request["data"] = json.loads(data.decode())
+    if method.lower() == "post" and data:
+        try:
+            request["data"] = json.loads(data.decode())
+        except Exception as e:
+            # xml,form
+            request["data"] = data.decode()
 
     status = "200 OK"
     headers = [
@@ -32,6 +37,9 @@ def application(environ, start_response):
     start_response(status, headers)
     try:
         data = ROUTE[url]()
+
+        if type(data) is str:
+            return [data.encode("utf-8")]
         return [json.dumps(data).encode("utf-8")]
     except Exception as e:
         err = show_reponse(code=Status.other, message=f"{e}")

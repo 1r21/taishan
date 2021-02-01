@@ -22,6 +22,11 @@ QINIU_ACCESS_KEY = env.get('QINIU_ACCESS_KEY')
 QINIU_SECRET_KEY = env.get('QINIU_SECRET_KEY')
 QINIU_BUCKET_NAME = env.get('QINIU_BUCKET_NAME')
 
+# weixin
+WX_APPID = env.get('WX_APPID')
+WX_SECRET = env.get('WX_SECRET')
+WX_SALT = env.get('WX_SALT')
+
 # jwt
 TOKEN_SALT = env.get("TOKEN_SALT")
 TOKEN_EXP = 30 * 60

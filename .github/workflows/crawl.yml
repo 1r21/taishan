@@ -7,7 +7,8 @@ on:
   schedule:
     # At every 20th minute from 0 through 59 past every hour from 8 through 10
     # on every day-of-week from Sunday through Saturday.
-    - cron: "0/20 0-2 * * 0-6"
+    # 0-59/20 0-2 * * 0-6
+    - cron: "30 0-2 * * 0-6"
 
 jobs:
   build:
