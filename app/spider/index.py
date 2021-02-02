@@ -14,8 +14,7 @@ from app.weixin.index import upload_material, add_material
 
 tz = pytz.timezone("America/New_York")
 
-# base_url = "https://www.pbs.org/newshour/latest"
-base_url = "http://192.168.8.125:5000/The%20Latest%20_%20PBS%20NewsHour.htm"
+base_url = "https://www.pbs.org/newshour/latest"
 
 # set retries number
 requests.adapters.DEFAULT_RETRIES = 15
@@ -141,7 +140,7 @@ def parse_transcript_audio():
             news_wrap.get("image_from"),
             today,
         )
-        # return exec_sql(sql, values)
+        return exec_sql(sql, values)
     return err_msg
 
 
