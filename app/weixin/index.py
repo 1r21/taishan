@@ -4,7 +4,7 @@ import re
 
 import requests
 
-from app.setting import WX_APPID, WX_SECRET
+from app.setting import WX_APPID, WX_SECRET, WEB_APP_URL
 from ..libs.helper import exec_sql, query_size
 
 wx_base_url = "https://api.weixin.qq.com/cgi-bin"
@@ -123,7 +123,7 @@ def add_material(date, asset_path):
     content = re.sub(">\s*<", "><", content.strip())
     content = f'<section style="list-style: none;text-indent: 2em;">{content}</section>'
     summary = article[2] if len(article[2]) < 120 else f"{article[2][0:100]}..."
-    content_source_url = f"http://ai.chenggang.win/detail/{article[0]}"
+    content_source_url = f"{WEB_APP_URL}/detail/{article[0]}"
     payload = {
         "articles": [
             {
