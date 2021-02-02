@@ -4,6 +4,7 @@
 name: Crawl information
 
 on:
+  workflow_dispatch:
   schedule:
     # At every 20th minute from 0 through 59 past every hour from 8 through 10
     # on every day-of-week from Sunday through Saturday.
@@ -47,6 +48,10 @@ jobs:
           DINGDING_PUSH: ${{ secrets.DINGDING_PUSH }}
           DINGDING_TOKEN: ${{ secrets.DINGDING_TOKEN }}
           DINGDING_ROBOT_KEY: ${{ secrets.DINGDING_ROBOT_KEY }}
+          # weixin
+          WX_APPID: ${{ secrets.WX_APPID }}
+          WX_SECRET: ${{ secrets.WX_SECRET }}
+          WX_SALT: ${{ secrets.WX_SALT }}
           # website
           WEB_APP_URL: ${{ secrets.WEB_APP_URL }}
           FILE_SERVER_URL: ${{ secrets.FILE_SERVER_URL }}
