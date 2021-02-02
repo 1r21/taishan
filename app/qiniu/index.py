@@ -9,7 +9,7 @@ def save_file_2_qiniu(path, filename):
             bucket = BucketManager(q)
             # file info
             ret, info = bucket.stat(QINIU_BUCKET_NAME, filename)
-            if "hash" not in ret:
+            if not ret or "hash" not in ret:
                 print(f"{filename} start upload...")
                 token = q.upload_token(QINIU_BUCKET_NAME, filename, 3600)
                 put_file(token, filename, path)
