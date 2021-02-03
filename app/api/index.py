@@ -19,27 +19,19 @@ def favicon():
 @route("/api/news")
 def get_news():
     # date desc
-    sql = "Select `id`,`title`,`summary`,`transcript`,`audio_url`,`image_url`,`source`,`date` from `news` order by `date` desc"
+    sql = "Select `id`,`title`,`image_url`,`date` from `news` order by `date` desc"
     news = query_all(sql)
     data = []
     for item in news:
         id = item[0]
         title = item[1]
-        summary = item[2]
-        transcript = item[3]
-        audio_url = item[4]
-        image_url = item[5]
-        source = item[6]
-        date = item[7]
+        image_url = item[2]
+        date = item[3]
         data.append(
             dict(
                 id=id,
                 title=title,
-                summary=summary,
-                transcript=transcript,
-                src=FILE_SERVER_URL + "/audio/" + audio_url,
                 cover=FILE_SERVER_URL + "/image/" + image_url,
-                source=source,
                 date=date.strftime("%Y-%m-%d"),
             ),
         )
@@ -53,19 +45,19 @@ def get_news_by_id():
     if not data:
         return show_reponse(code=Status.other, message="param error")
     article_id = data.get("id")
-    sql = f"Select `title`,`audio_url`,`image_url`,`transcript`,`date` from `news` where `id`=%s"
+    sql = f"Select `title`,`source`,`image_url`,`transcript`,`date` from `news` where `id`=%s"
     result = query_size(sql, article_id)
     if result:
         article = result[0]
         title = article[0]
-        audio_url = article[1]
+        source = article[1]
         image_url = article[2]
         transcript = article[3]
         date = article[4]
         detail = dict(
             title=title,
             transcript=transcript,
-            src=FILE_SERVER_URL + "/audio/" + audio_url,
+            src=source,
             cover=FILE_SERVER_URL + "/image/" + image_url,
             date=date.strftime("%Y-%m-%d"),
         )
