@@ -45,7 +45,7 @@ def get_news_by_id():
     if not data:
         return show_reponse(code=Status.other, message="param error")
     article_id = data.get("id")
-    sql = f"Select `title`,`source`,`image_url`,`transcript`,`date` from `news` where `id`=%s"
+    sql = f"Select `title`,`source`,`image_url`,`transcript`,`date`,`audio_url` from `news` where `id`=%s"
     result = query_size(sql, article_id)
     if result:
         article = result[0]
@@ -54,10 +54,12 @@ def get_news_by_id():
         image_url = article[2]
         transcript = article[3]
         date = article[4]
+        audio_url = article[5]
         detail = dict(
             title=title,
             transcript=transcript,
-            src=source,
+            src=FILE_SERVER_URL + "/audio/" + audio_url,
+            source=source,
             cover=FILE_SERVER_URL + "/image/" + image_url,
             date=date.strftime("%Y-%m-%d"),
         )
