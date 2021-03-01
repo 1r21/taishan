@@ -14,7 +14,7 @@ from app.weixin.index import upload_material, add_material
 
 tz = pytz.timezone("America/New_York")
 
-base_url = "https://www.pbs.org/newshour/latest"
+base_url = "https://www.pbs.org/newshour/latest/page/5"
 
 # set retries number
 requests.adapters.DEFAULT_RETRIES = 15
@@ -50,7 +50,7 @@ def save_assets(url, date, file_type="audio"):
         if file_type == "audio":
             new_filename = f"{date.strftime('%d-%m-%Y')}.{ext_name}"
             dstFile = os.path.join(cur_dir, f"static/{file_type}", f"{new_filename}")
-            os.rename(asset_path,dstFile)
+            os.rename(asset_path, dstFile)
             upload_material(dstFile, "voice")
     except Exception as e:
         print("Save Err: ", e)
@@ -88,19 +88,60 @@ def parse_list(url=base_url, date=""):
 def parse_transcript_audio():
     # check database
     today = datetime.datetime.now(tz).date()
-    sql = f"Select `id` from `news` where `date`=%s"
-    articles = query_size(sql, today)
-    if articles:
-        return "News Exists"
-
     news_wrap = parse_list(date=today)
-    source = news_wrap.get("source")
+    title = news_wrap.get("title")
     err_msg = "News is still on the way!"
 
-    if not source:
+    if not news_wrap:
         return err_msg
+
+    sql = f"SELECT `id`,`transcript` FROM `news` WHERE `title`=%s"
+    articles = query_size(sql, title)
+    (article,) = articles
+    article_id, transcript = article
+
+    if transcript and article_id:
+        return "News Exists"
+
+    if not article_id:
+        source = news_wrap.get("source")
+        article_html = etree.HTML(fetch_content(source))
+        audioEl = article_html.xpath("//audio/source/@src")
+
+        audio_from = ""
+        audio_url = ""
+
+        if audioEl:
+            audio_from = audioEl[0]
+            audio_url = save_assets(audio_from, today)
+
+        sql = "INSERT INTO `news` \
+            (`title`,`audio_url`,`image_url`,`source`,`audio_from`,`image_from`,`date`) \
+            VALUES (%s,%s,%s,%s,%s,%s,%s)"
+        values = (
+            news_wrap.get("title"),
+            audio_url,
+            news_wrap.get("image_url"),
+            source,
+            audio_from,
+            news_wrap.get("image_from"),
+            today,
+        )
+        return exec_sql(sql, values)
+
+    if article_id and not transcript:
+        return parse_transcript(title)
+
+
+def parse_transcript(title):
+    q_sql = f"SELECT `source` FROM `news` WHERE `title`=%s"
+    articles = query_size(q_sql, title)
+    if not articles:
+        return "No Article"
+
+    (article,) = articles
+    (source,) = article
     article_html = etree.HTML(fetch_content(source))
-    audioEl = article_html.xpath("//audio/source/@src")
     transcriptEl = article_html.xpath(
         '//div[@id="transcript"]/ul[@class="video-transcript"]'
     )
@@ -110,53 +151,33 @@ def parse_transcript_audio():
 
     summary = ""
     transcript = ""
-    audio_from = ""
-    audio_url = ""
 
-    if len(transcriptEl) > 0:
+    if transcriptEl:
         transcript = etree.tostring(transcriptEl[0]).decode()
         text_list = etree.HTML(transcript).xpath("//li/div/p/text()")
-        if len(summaryEl) > 0:
-            summary = summaryEl[0]
-        else:
-            summary = len(text_list) > 0 and text_list[0]
 
-    if len(audioEl) > 0:
-        audio_from = audioEl[0]
-        audio_url = save_assets(audio_from, today)
+    if summaryEl:
+        summary = summaryEl[0]
+    else:
+        summary = text_list and text_list[0]
 
-    if audio_url and transcript:
-        sql = "INSERT INTO `news` \
-        (`title`,`transcript`,`summary`,`audio_url`, `image_url`,`source`,`audio_from`,`image_from`,`date`) \
-        VALUES (%s, %s, %s, %s,%s, %s, %s, %s,%s)"
-        values = (
-            news_wrap.get("title"),
-            transcript,
-            summary,
-            audio_url,
-            news_wrap.get("image_url"),
-            source,
-            audio_from,
-            news_wrap.get("image_from"),
-            today,
-        )
-        return exec_sql(sql, values)
-    return err_msg
+    sql = "UPDATE `news` SET `summary`=%s,`transcript`=%s WHERE `title`=%s"
+    return exec_sql(sql, (summary, transcript, title))
 
 
 def push_news_by_date(date):
-    q_sql = f"Select `id`,`title`,`summary`,`image_url` from `news` where `date`=%s"
+    q_sql = f"SELECT `id`,`title`,`summary`,`image_url` from `news` where `date`=%s"
     result = query_size(q_sql, date)
     err_msg = {"errmsg": "Push Fail!"}
     if result:
         # 05-12-2020
-        article = result[0]
+        article_id, title, summary, image_url = result
         f_date = date.strftime("%d-%m-%Y")
         err_msg = send_message(
-            id=article[0],
-            title=f"{f_date}:{article[1]}",
-            content=article[2],
-            picUrl=f"image/{article[3]}",
+            id=article_id,
+            title=f"{f_date}:{title}",
+            content=summary,
+            picUrl=f"image/{image_url}",
         )
     return err_msg
 
