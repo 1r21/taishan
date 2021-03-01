@@ -11,20 +11,31 @@ headers = {
 }
 
 
-def send_message(id=None, title="pbs", content="interesting news", picUrl=None):
+def send_message(
+    m_type="link", id=None, title="pbs", content="interesting news", picUrl=None
+):
     if not DINGDING_PUSH:
         return {"errmsg": "Push Forbidden!"}
-    result = compute_sign()
-    req_url = f"{webhook}{DINGDING_TOKEN}&timestamp={result[0]}&sign={result[1]}"
+    timestamp, sign = compute_sign()
+    req_url = f"{webhook}{DINGDING_TOKEN}&timestamp={timestamp}&sign={sign}"
+    image_url = f"{FILE_SERVER_URL}/{picUrl}"
+    app_url = f"{WEB_APP_URL}/detail/{id}" if id else WEB_APP_URL
     data = {
-        "msgtype": "link",
-        "link": {
-            "text": content,
+        "msgtype": m_type,
+        m_type: {
             "title": title,
-            "picUrl": f"{FILE_SERVER_URL}/{picUrl}",
-            "messageUrl": f"{WEB_APP_URL}/detail/{id}" if id else WEB_APP_URL,
+            "text": content,
+            "picUrl": image_url,
+            "messageUrl": app_url,
         },
     }
+    if m_type == "text":
+        data = {
+            "msgtype": m_type,
+            m_type: {"content": content},
+            "at": {"isAtAll": True},
+        }
+
     try:
         r = requests.post(req_url, headers=headers, json=data)
         return json.loads(r.text)
@@ -33,5 +44,5 @@ def send_message(id=None, title="pbs", content="interesting news", picUrl=None):
 
 
 if __name__ == "__main__":
-    result = send_message()
-    print("result:", result)
+    result = send_message(m_type="text")
+    print("Send Result:", result)

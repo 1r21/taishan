@@ -14,7 +14,7 @@ from app.weixin.index import upload_material, add_material
 
 tz = pytz.timezone("America/New_York")
 
-base_url = "https://www.pbs.org/newshour/latest/page/5"
+base_url = "https://www.pbs.org/newshour/latest/page/3"
 
 # set retries number
 requests.adapters.DEFAULT_RETRIES = 15
@@ -95,15 +95,17 @@ def parse_transcript_audio():
     if not news_wrap:
         return err_msg
 
-    sql = f"SELECT `id`,`transcript` FROM `news` WHERE `title`=%s"
+    sql = f"SELECT `transcript` FROM `news` WHERE `title`=%s"
     articles = query_size(sql, title)
-    (article,) = articles
-    article_id, transcript = article
+    if articles:
+        (article,) = articles
+        (transcript,) = article
 
-    if transcript and article_id:
-        return "News Exists"
-
-    if not article_id:
+        if transcript:
+            return "News Exists"
+        else:
+            return parse_transcript(title)
+    else:
         source = news_wrap.get("source")
         article_html = etree.HTML(fetch_content(source))
         audioEl = article_html.xpath("//audio/source/@src")
@@ -112,14 +114,14 @@ def parse_transcript_audio():
         audio_url = ""
 
         if audioEl:
-            audio_from = audioEl[0]
+            (audio_from,) = audioEl
             audio_url = save_assets(audio_from, today)
 
         sql = "INSERT INTO `news` \
             (`title`,`audio_url`,`image_url`,`source`,`audio_from`,`image_from`,`date`) \
             VALUES (%s,%s,%s,%s,%s,%s,%s)"
         values = (
-            news_wrap.get("title"),
+            title,
             audio_url,
             news_wrap.get("image_url"),
             source,
@@ -128,9 +130,6 @@ def parse_transcript_audio():
             today,
         )
         return exec_sql(sql, values)
-
-    if article_id and not transcript:
-        return parse_transcript(title)
 
 
 def parse_transcript(title):
@@ -149,8 +148,9 @@ def parse_transcript(title):
         '//div[@id="transcript"]/div[@class="vt__excerpt body-text"]/p/text()'
     )
 
-    summary = ""
-    transcript = ""
+    summary = None
+    transcript = None
+    text_list = None
 
     if transcriptEl:
         transcript = etree.tostring(transcriptEl[0]).decode()
@@ -159,27 +159,32 @@ def parse_transcript(title):
     if summaryEl:
         summary = summaryEl[0]
     else:
-        summary = text_list and text_list[0]
+        summary = text_list[0] if text_list else ""
 
-    sql = "UPDATE `news` SET `summary`=%s,`transcript`=%s WHERE `title`=%s"
-    return exec_sql(sql, (summary, transcript, title))
+    if summary and transcript:
+        sql = "UPDATE `news` SET `summary`=%s,`transcript`=%s WHERE `title`=%s"
+        return exec_sql(sql, (summary, transcript, title))
+    return "No Transcript"
 
 
 def push_news_by_date(date):
-    q_sql = f"SELECT `id`,`title`,`summary`,`image_url` from `news` where `date`=%s"
-    result = query_size(q_sql, date)
+    q_sql = f"SELECT `id`,`title`,`summary`,`image_url` FROM `news` WHERE `date`=%s"
+    articles = query_size(q_sql, date)
     err_msg = {"errmsg": "Push Fail!"}
-    if result:
+    if articles:
+        (article,) = articles
+        article_id, title, summary, image_url = article
         # 05-12-2020
-        article_id, title, summary, image_url = result
         f_date = date.strftime("%d-%m-%Y")
+        tip_text = "Here comes the transcript ⬆️"
         err_msg = send_message(
+            m_type="text" if summary else "link",
             id=article_id,
-            title=f"{f_date}:{title}",
-            content=summary,
+            title=f"{f_date}",
+            content=tip_text if summary else title,
             picUrl=f"image/{image_url}",
         )
-    return err_msg
+    return err_msg, bool(summary)
 
 
 if __name__ == "__main__":
@@ -189,11 +194,12 @@ if __name__ == "__main__":
         print(f"Crawl Result: {result}")
         if result == "Ok":
             today = datetime.datetime.now(tz).date()
-            r_dict = push_news_by_date(today)
+            r_dict, has_transcript = push_news_by_date(today)
             print(f"Push Result: {r_dict.get('errmsg')}")
-            asset_name = f"pbs_newswrap_{today.strftime('%Y%m%d')}.jpg"
-            asset_path = f"{os.getcwd()}/static/image/{asset_name}"
-            wx_dict = add_material(today, asset_path)
-            print(f"Add WX Materal: {wx_dict.get('media_id')}")
+            if has_transcript:
+                asset_name = f"pbs_newswrap_{today.strftime('%Y%m%d')}.jpg"
+                asset_path = f"{os.getcwd()}/static/image/{asset_name}"
+                wx_dict = add_material(today, asset_path)
+                print(f"Add WX Materal: {wx_dict.get('media_id')}")
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Final Error: {e}")
