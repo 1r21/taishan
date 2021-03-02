@@ -6,7 +6,7 @@ import pytz
 import requests
 from lxml import etree
 
-from app.setting import PROXY
+from app.setting import PROXY, TARGET_URL
 from app.libs.helper import exec_sql, query_size
 from app.robot.index import send_message
 from app.qiniu.index import save_file_2_qiniu
@@ -14,14 +14,11 @@ from app.weixin.index import upload_material, add_material
 
 tz = pytz.timezone("America/New_York")
 
-base_url = "https://www.pbs.org/newshour/latest/page/3"
-
 # set retries number
 requests.adapters.DEFAULT_RETRIES = 15
 s = requests.session()
 # close useless connect
 s.keep_alive = False
-
 
 def fetch_content(url, type="text"):
     try:
@@ -53,12 +50,12 @@ def save_assets(url, date, file_type="audio"):
             os.rename(asset_path, dstFile)
             upload_material(dstFile, "voice")
     except Exception as e:
-        print("Save Err: ", e)
+        print("Save Assets Err: ", e)
 
     return asset_name
 
 
-def parse_list(url=base_url, date=""):
+def parse_list(url=TARGET_URL, date=""):
     content = fetch_content(url)
     news_list_html = etree.HTML(content)
     articles = news_list_html.xpath(
