@@ -58,7 +58,7 @@ def publish_blog(date):
                     "tags": ["pbs"],
                     "custom_excerpt": "news,english",
                     "feature_image": f"{GHOST_URL}/static/image/{image_url}?date={f_date}",
-                    "status": "draft",
+                    "status": "published",
                 }
             ]
         }
