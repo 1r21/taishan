@@ -11,6 +11,7 @@ from app.libs.helper import exec_sql, query_size
 from app.robot.index import send_message
 from app.qiniu.index import save_file_2_qiniu
 from app.weixin.index import upload_material, add_material
+from app.ghost.index import publish_blog
 
 tz = pytz.timezone("America/New_York")
 
@@ -19,6 +20,7 @@ requests.adapters.DEFAULT_RETRIES = 15
 s = requests.session()
 # close useless connect
 s.keep_alive = False
+
 
 def fetch_content(url, type="text"):
     try:
@@ -198,5 +200,8 @@ if __name__ == "__main__":
                 asset_path = f"{os.getcwd()}/static/image/{asset_name}"
                 wx_dict = add_material(today, asset_path)
                 print(f"Add WX Materal: {wx_dict.get('media_id')}")
+                # publish ghost
+                g_msg = publish_blog(today)
+                print(f"publish ghost:", g_msg)
     except Exception as e:
         print(f"Final Error: {e}")
