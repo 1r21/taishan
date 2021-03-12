@@ -20,11 +20,13 @@ requests.adapters.DEFAULT_RETRIES = 15
 s = requests.session()
 # close useless connect
 s.keep_alive = False
+s.headers.update({"cache-control": "no-cache"})
 
 
 def fetch_content(url, type="text"):
     try:
-        r = requests.get(url, proxies=PROXY if type != "text" else None, timeout=60)
+        proxies = PROXY if type != "text" else None
+        r = requests.get(url, proxies=proxies, timeout=60)
         return r.text if type == "text" else r.content
     except Exception as e:
         raise Exception(f"Fetch Fail: {e}")
