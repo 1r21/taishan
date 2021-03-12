@@ -1,5 +1,5 @@
 import os
-import datetime
+from datetime import datetime
 from pathlib import Path
 
 import pytz
@@ -86,61 +86,49 @@ def parse_list(url=TARGET_URL, date=""):
     return news_wrap
 
 
-def parse_transcript_audio():
-    # check database
-    today = datetime.datetime.now(tz).date()
-    news_wrap = parse_list(date=today)
+def parse_transcript_audio(date):
+    news_wrap = parse_list(date=date)
     title = news_wrap.get("title")
     err_msg = "News is still on the way!"
 
     if not news_wrap:
         return err_msg
 
-    sql = f"SELECT `transcript` FROM `news` WHERE `title`=%s"
+    sql = f"SELECT `transcript`,`source`,`title` FROM `news` WHERE `title`=%s"
     articles = query_size(sql, title)
     if articles:
         (article,) = articles
-        (transcript,) = article
+        (transcript, *_) = article
+        return "News Exists" if transcript else parse_transcript(article)
 
-        if transcript:
-            return "News Exists"
-        else:
-            return parse_transcript(title)
-    else:
-        source = news_wrap.get("source")
-        article_html = etree.HTML(fetch_content(source))
-        audioEl = article_html.xpath("//audio/source/@src")
+    source = news_wrap.get("source")
+    article_html = etree.HTML(fetch_content(source))
+    audioEl = article_html.xpath("//audio/source/@src")
 
-        audio_from = ""
-        audio_url = ""
+    audio_from = ""
+    audio_url = ""
 
-        if audioEl:
-            (audio_from,) = audioEl
-            audio_url = save_assets(audio_from, today)
+    if audioEl:
+        (audio_from,) = audioEl
+        audio_url = save_assets(audio_from, date)
 
-        sql = "INSERT INTO `news` \
-            (`title`,`audio_url`,`image_url`,`source`,`audio_from`,`image_from`,`date`) \
-            VALUES (%s,%s,%s,%s,%s,%s,%s)"
-        values = (
-            title,
-            audio_url,
-            news_wrap.get("image_url"),
-            source,
-            audio_from,
-            news_wrap.get("image_from"),
-            today,
-        )
-        return exec_sql(sql, values)
+    sql = "INSERT INTO `news` \
+        (`title`,`audio_url`,`image_url`,`source`,`audio_from`,`image_from`,`date`) \
+        VALUES (%s,%s,%s,%s,%s,%s,%s)"
+    values = (
+        title,
+        audio_url,
+        news_wrap.get("image_url"),
+        source,
+        audio_from,
+        news_wrap.get("image_from"),
+        date,
+    )
+    return exec_sql(sql, values)
 
 
-def parse_transcript(title):
-    q_sql = f"SELECT `source` FROM `news` WHERE `title`=%s"
-    articles = query_size(q_sql, title)
-    if not articles:
-        return "No Article"
-
-    (article,) = articles
-    (source,) = article
+def parse_transcript(article):
+    (_, source, title) = article
     article_html = etree.HTML(fetch_content(source))
     transcriptEl = article_html.xpath(
         '//div[@id="transcript"]/ul[@class="video-transcript"]'
@@ -168,42 +156,50 @@ def parse_transcript(title):
     return "No Transcript"
 
 
-def push_news_by_date(date):
-    q_sql = f"SELECT `id`,`title`,`summary`,`image_url` FROM `news` WHERE `date`=%s"
-    articles = query_size(q_sql, date)
-    err_msg = {"errmsg": "Push Fail!"}
-    if articles:
-        (article,) = articles
-        article_id, title, summary, image_url = article
-        # 05-12-2020
-        f_date = date.strftime("%d-%m-%Y")
-        tip_text = "Here comes the transcript ⬆️"
-        err_msg = send_message(
-            m_type="text" if summary else "link",
-            id=article_id,
-            title=f"{f_date}",
-            content=tip_text if summary else title,
-            picUrl=f"image/{image_url}",
-        )
-    return err_msg, bool(summary)
+def push_news_by_date(article):
+    article_id, title, transcript, image_url, date, *_ = article
+    # 05-12-2020
+    f_date = date.strftime("%d-%m-%Y")
+    tip_text = "Here comes the transcript ⬆️"
+    return send_message(
+        m_type="text" if transcript else "link",
+        id=article_id,
+        title=f"{f_date}",
+        content=tip_text if transcript else title,
+        picUrl=f"image/{image_url}",
+    )
+
+
+def crawl_by_date(date):
+    try:
+        date = datetime.strptime(date, "%Y-%m-%d") if type(date) == str else date
+        s_date = date.strftime("%Y-%m-%d")
+        print(f"[{s_date}]:Start Crawl...")
+        result = parse_transcript_audio(date)
+        print(f"Crawl Result: {result}")
+        if result == "Ok":
+            q_sql = f"SELECT `id`,`title`,`transcript`,`image_url`,`date`,`source`,`summary` FROM `news` WHERE `date`=%s"
+            articles = query_size(q_sql, date)
+            if articles:
+                (article,) = articles
+                r_dict = push_news_by_date(article)
+                print(f"Push Result: {r_dict.get('errmsg')}")
+                (_, _, transcript, *_) = article
+                if transcript:
+                    # upload weixin official account
+                    asset_name = f"pbs_newswrap_{date.strftime('%Y%m%d')}.jpg"
+                    asset_path = f"{os.getcwd()}/static/image/{asset_name}"
+                    _, wx_message = add_material(article, asset_path)
+                    print(f"Add WX Materal: {wx_message}")
+                    # publish ghost
+                    g_msg = publish_blog(article)
+                    print(f"publish ghost:", g_msg)
+            else:
+                print("No Articles!")
+    except Exception as e:
+        print(f"Final Error: {e}")
 
 
 if __name__ == "__main__":
-    try:
-        print("Start Crawl...")
-        result = parse_transcript_audio()
-        print(f"Crawl Result: {result}")
-        if result == "Ok":
-            today = datetime.datetime.now(tz).date()
-            r_dict, has_transcript = push_news_by_date(today)
-            print(f"Push Result: {r_dict.get('errmsg')}")
-            if has_transcript:
-                asset_name = f"pbs_newswrap_{today.strftime('%Y%m%d')}.jpg"
-                asset_path = f"{os.getcwd()}/static/image/{asset_name}"
-                wx_dict = add_material(today, asset_path)
-                print(f"Add WX Materal: {wx_dict.get('media_id')}")
-                # publish ghost
-                g_msg = publish_blog(today)
-                print(f"publish ghost:", g_msg)
-    except Exception as e:
-        print(f"Final Error: {e}")
+    today = datetime.now(tz).date()
+    crawl_by_date(today)

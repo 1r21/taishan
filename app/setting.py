@@ -30,8 +30,8 @@ WX_SECRET = env.get("WX_SECRET")
 WX_SALT = env.get("WX_SALT")
 
 # ghost
-GHOST_KEY = env.get('GHOST_KEY')
-GHOST_URL = env.get('GHOST_URL')
+GHOST_KEY = env.get("GHOST_KEY")
+GHOST_URL = env.get("GHOST_URL")
 
 # jwt
 TOKEN_SALT = env.get("TOKEN_SALT")

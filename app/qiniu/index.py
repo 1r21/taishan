@@ -8,7 +8,7 @@ def save_file_2_qiniu(path, filename):
             q = Auth(QINIU_ACCESS_KEY, QINIU_SECRET_KEY)
             bucket = BucketManager(q)
             # file info
-            ret, info = bucket.stat(QINIU_BUCKET_NAME, filename)
+            ret, _ = bucket.stat(QINIU_BUCKET_NAME, filename)
             if not ret or "hash" not in ret:
                 print(f"{filename} start upload...")
                 token = q.upload_token(QINIU_BUCKET_NAME, filename, 3600)
