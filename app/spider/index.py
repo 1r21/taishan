@@ -76,18 +76,16 @@ def parse_list(url=TARGET_URL, date=""):
             imageEl = article_html.xpath('//a[@class="card-timeline__img-link"]/img')
             article_from = len(articleEl) > 0 and articleEl[0].get("href")
             image_from = len(imageEl) > 0 and imageEl[0].get("src")
-            image_url = save_assets(image_from, date, file_type="image")
 
             news_wrap["title"] = title
             news_wrap["source"] = article_from
-            news_wrap["image_url"] = image_url
             news_wrap["image_from"] = image_from
             break
     return news_wrap
 
 
 def parse_transcript_audio(date):
-    news_wrap = parse_list(date=date)
+    news_wrap = parse_list()
     title = news_wrap.get("title")
     err_msg = "News is still on the way!"
 
@@ -100,6 +98,10 @@ def parse_transcript_audio(date):
         (article,) = articles
         (transcript, *_) = article
         return "News Exists" if transcript else parse_transcript(article)
+
+    # save cover
+    image_from = news_wrap.get("image_from")
+    image_url = save_assets(image_from, date, file_type="image")
 
     source = news_wrap.get("source")
     article_html = etree.HTML(fetch_content(source))
@@ -115,15 +117,7 @@ def parse_transcript_audio(date):
     sql = "INSERT INTO `news` \
         (`title`,`audio_url`,`image_url`,`source`,`audio_from`,`image_from`,`date`) \
         VALUES (%s,%s,%s,%s,%s,%s,%s)"
-    values = (
-        title,
-        audio_url,
-        news_wrap.get("image_url"),
-        source,
-        audio_from,
-        news_wrap.get("image_from"),
-        date,
-    )
+    values = (title, audio_url, image_url, source, audio_from, image_from, date)
     return exec_sql(sql, values)
 
 
