@@ -59,7 +59,7 @@ def save_assets(url, date, file_type="audio"):
     return asset_name
 
 
-def parse_list(url=TARGET_URL, date=""):
+def parse_list(url=TARGET_URL):
     content = fetch_content(url)
     news_list_html = etree.HTML(content)
     articles = news_list_html.xpath(
@@ -87,6 +87,7 @@ def parse_list(url=TARGET_URL, date=""):
 def parse_transcript_audio(date):
     news_wrap = parse_list()
     title = news_wrap.get("title")
+    print("title", title)
     err_msg = "News is still on the way!"
 
     if not news_wrap:
