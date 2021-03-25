@@ -1,3 +1,4 @@
+> **The main branch is under active development**
 ## dev
 1. create virtual env
 - `python3 -m venv .venv`

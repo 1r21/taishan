@@ -6,7 +6,7 @@ from app.setting import GHOST_KEY
 
 def compute_sign():
     if not GHOST_KEY:
-        return False, "No Ghost Key"
+        return None, "No Ghost Key"
     # Split the key into ID and SECRET
     id, secret = GHOST_KEY.split(":")
 
@@ -18,7 +18,6 @@ def compute_sign():
 
     # Create the token (including decoding secret)
     return (
-        True,
-        "Ok",
         jwt.encode(payload, bytes.fromhex(secret), algorithm="HS256", headers=header),
+        "Ok",
     )

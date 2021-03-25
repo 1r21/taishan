@@ -56,3 +56,7 @@ def query_size(sql, values=None, size=1):
 
 def make_password(password):
     return hashlib.md5(f"{password}{TOKEN_SALT}".encode("utf-8")).hexdigest()
+
+
+def head(list):
+    return list[0] if list else None
