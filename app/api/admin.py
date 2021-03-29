@@ -1,14 +1,14 @@
 # admin api
 import time
-
 import jwt
-from ..setting import TOKEN_EXP, TOKEN_SALT,FILE_SERVER_URL
-from ..libs.helper import exec_sql, query_all, query_size, make_password
-from ..libs.decorator import route, login_required
-from ..libs.response import show_reponse, Status
-from ..libs.variable import request
-from ..robot.index import send_message
-from ..spider.index import parse_transcript_audio
+
+from app.setting import TOKEN_EXP, TOKEN_SALT, FILE_SERVER_URL
+from app.libs.db import db_helper
+from app.libs.util import make_password
+from app.libs.decorator import route, login_required
+from app.libs.response import show_reponse, Status
+from app.libs.variable import request
+from app.spider.pbs_article import automation
 
 # admin user
 @route("/admin/user")
@@ -18,9 +18,11 @@ def login():
         return show_reponse(code=Status.no_auth)
     username = data.get("username")
     password = data.get("password")
-    sql = "Select  `id` from `users` where `username`=%s and `password`=%s"
-    user_id = query_size(sql, (username, make_password(password)))
-    if len(user_id) == 0:
+    query = "SELECT id FROM users WHERE username = %s and password = %s"
+    user_id = db_helper.fetchone(
+        query, (username, make_password(password, TOKEN_SALT))
+    )
+    if user_id:
         return show_reponse(code=Status.no_auth)
     payload = {"id": user_id[0], "username": username, "exp": time.time() + TOKEN_EXP}
     token = jwt.encode(payload, TOKEN_SALT, algorithm="HS256")
@@ -30,7 +32,7 @@ def login():
 @route("/admin/crawl")
 @login_required
 def start_crawl():
-    message = parse_transcript_audio()
+    automation.start()
     code = Status.success if message == "Ok" else Status.other
     return show_reponse(code=code, message=message)
 
@@ -38,8 +40,11 @@ def start_crawl():
 @route("/admin/news")
 def get_news():
     # date desc
-    sql = "Select `id`,`title`,`summary`,`transcript`,`audio_url`,`image_url`,`source`,`date` from `news` order by `date` desc"
-    news = query_all(sql)
+    sql = (
+        "SELECT id, title, summary, transcript, audio_url, image_url, source, date FROM news "
+        "ORDER BY date desc"
+    )
+    news = db_helper.execute_sql(sql)
     data = []
     for item in news:
         id = item[0]
@@ -73,7 +78,7 @@ def delete_news():
     if not data:
         return show_reponse(code=Status.other, message="param error")
     article_id = data.get("id")
-    sql = "DELETE FROM `news` where `id`=%s"
+    sql = "DELETE FROM news WHERE id = %s"
     message = exec_sql(sql, article_id)
     code = Status.success if message == "Ok" else Status.other
     return show_reponse(code=code, message=message)
@@ -88,7 +93,7 @@ def send_dd_message():
     if not data:
         return show_reponse(code=err_code, message="Param Error")
     article_id = data.get("id")
-    sql = f"Select `date`,`title`,`summary`,`image_url` from `news` where `id`=%s"
+    sql = "SELECT date, title, summary, image_url FROM news WHERE id = %s"
     result = query_size(sql, article_id)
     if result:
         article = result[0]

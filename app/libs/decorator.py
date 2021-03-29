@@ -2,13 +2,15 @@ from functools import wraps
 
 import jwt
 
-from app.libs.helper import query_size
+from app.libs.db import db_helper
 from app.libs.variable import ROUTE, request
 from app.setting import TOKEN_SALT
+
 
 def route(url):
     def wrapper(func):
         ROUTE[url] = func
+
     return wrapper
 
 
@@ -17,8 +19,8 @@ def check_user_authed(token):
     id = user_decode.get("id")
     username = user_decode.get("username")
     if len(id) > 0:
-        sql = "SELECT `id` `username` from `users` where `id`=%s and username=%s"
-        user = query_size(sql, (id[0], username))
+        sql = "SELECT id, username FROM users WHERE id=%s and username=%s"
+        user = db_helper.fetchone(sql, (id[0], username))
         return bool(user)
     return False
 

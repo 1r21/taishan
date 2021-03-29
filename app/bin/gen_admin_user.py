@@ -1,20 +1,20 @@
-import datetime
-from app.libs.helper import exec_sql, query_size, make_password
+from datetime import datetime
+from app.libs.util import make_password
+from app.libs.db import exec_sql, query_size
+from app.setting import TOKEN_SALT
 
 
 def gen_user(uname, u_pass):
-    q_sql = f"Select `username` from  `users` where  `username` = %s"
-    username = query_size(q_sql, uname)
+    query = "SELECT username FROM `users` WHERE username = %s"
+    username = query_size(query, uname)
     if username:
         return "It Exist"
 
-    add_sql = (
-        "INSERT INTO `users` (`username`, `password`,`datetime`) VALUES (%s, %s, %s)"
-    )
+    insert_user = "INSERT INTO users (username, password, datetime) VALUES (%s, %s, %s)"
 
-    password = make_password(u_pass)
-    values = (uname, password, datetime.datetime.now())
-    return exec_sql(add_sql, values)
+    password = (u_pass, TOKEN_SALT)
+    values = (uname, password, datetime.now())
+    return exec_sql(insert_user, values)
 
 
 if __name__ == "__main__":
