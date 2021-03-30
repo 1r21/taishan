@@ -36,12 +36,12 @@ class Weixin:
             if news_item and news_item.get("title") == title:
                 return f"News has been published"
 
-        is_upload_ok, message, thumb_media_id = self.upload_material(asset_path)
-        if not is_upload_ok:
+        thumb_media_id, message = self.upload_material(asset_path)
+        if not thumb_media_id:
             return message
 
-        content = Weixin.__format_content(transcript)
-        payload = Weixin.__gen_article_payload(
+        content = self.__format_content(transcript)
+        payload = self.__gen_article_payload(
             article_id, title, summary, thumb_media_id, content
         )
         url = self.__get_req_url("/material/add_news")
@@ -55,19 +55,18 @@ class Weixin:
 
         for item in material_list:
             if item.get("name") == filename:
-                return False, f"{filename} exists"
+                return None, f"{filename} exists"
 
         url = self.__get_req_url("/material/add_material")
-        files = {"media": open(filepath, "rb")}
         data = self.make_request(
             "post",
             url=f"{url}&type={file_type}",
-            files=files,
+            files={"media": open(filepath, "rb")},
         )
         media_id = data.get("media_id")
         if media_id:
-            return True, "WX media_id: ", media_id
-        return False, f"{filename} Upload WX Asset Fail"
+            return media_id, "ok"
+        return None, f"{filename} Upload WX Asset Fail"
 
     def __get_material_list(self, file_type="image"):
         payload = {"type": file_type, "offset": 0, "count": 10}
@@ -76,11 +75,11 @@ class Weixin:
         return data.get("item")
 
     def __get_req_url(self, url):
-        return f"{Weixin.BASE_URL}{url}?access_token={self.token}"
+        return f"{self.BASE_URL}{url}?access_token={self.token}"
 
     @property
     def token(self):
-        url = f"{Weixin.BASE_URL}/token"
+        url = f"{self.BASE_URL}/token"
         params = {
             "grant_type": "client_credential",
             "appid": self.appid,
@@ -130,17 +129,9 @@ class Weixin:
             .replace("</ul>", "</section>")
             .replace("<li", "<div")
             .replace("</li>", "</div>")
-            .replace("vt__person--host", "")
-            .replace("vt__person", "")
-            .replace("vt__body", "")
-            .replace("body-text", "")
-            .replace('class=" "', "")
         )
         content = re.sub(">\s*<", "><", content.strip())
-        content = (
-            f'<section style="list-style: none;text-indent: 2em;">{content}</section>'
-        )
-        return content
+        return f'<section style="text-indent: 2em;">{content}</section>'
 
 
 class Bot:

@@ -239,7 +239,7 @@ class Automation(PBSArticle):
             msg_type, title=f_date, content=content, pic_url=pic_url, msg_url=msg_url
         )
         dd_info = dd_bot.send(template)
-        logger.info(f"Send Dingding({msg_type}): {dd_info.get('errmsg')}")
+        logger.info(f"Send Dingding(type={msg_type}): {dd_info.get('errmsg')}")
 
     # upload weixin official account
     def send_wx(self):

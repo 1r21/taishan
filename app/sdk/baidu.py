@@ -38,7 +38,7 @@ class BaiduT:
     @property
     def req_url(self):
         params = f"{self.q}&from=auto&to=auto&appid={self.appid}&salt={self.salt}&sign={self.token}"
-        return f"{BaiduT.BASE_URL}?q={params}"
+        return f"{self.BASE_URL}?q={params}"
 
     @staticmethod
     def __checkKey(appid, key, salt):
