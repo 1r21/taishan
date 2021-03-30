@@ -91,8 +91,10 @@ def add_material(article, asset_path):
         return False, message
 
     content = (
-        transcript.replace("ul", "section")
-        .replace("li", "section")
+        transcript.replace("<ul", "<section")
+        .replace("</ul", "</section")
+        .replace("<li", "<div")
+        .replace("</li", "</div")
         .replace("vt__person--host", "")
         .replace("vt__person", "")
         .replace("vt__body", "")
