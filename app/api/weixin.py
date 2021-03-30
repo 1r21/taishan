@@ -10,4 +10,5 @@ def weixin():
         return WXBot.receive(data)
     else:
         qs = request.get("qs")
-        return WXBot.check_token(qs)
+        bot = WXBot()
+        return bot.check_token(qs)

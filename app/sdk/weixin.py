@@ -1,7 +1,6 @@
 import os
 import re
 import random
-import time
 import hashlib
 from os import environ as env
 
@@ -10,7 +9,7 @@ import requests
 
 from app.libs.util import head
 from app.setting import WEB_APP_URL
-from . import wx_words as words
+from .wx_words import words
 
 WX_APPID = env.get("WX_APPID")
 WX_SECRET = env.get("WX_SECRET")
@@ -157,13 +156,15 @@ class Bot:
 
     @staticmethod
     def gen_response(from_user, to_user, content):
-        return f"<xml>\
-                <ToUserName><![CDATA[{from_user}]]>\
-                </ToUserName><FromUserName><![CDATA[{to_user}]]>\
-                </FromUserName><CreateTime>{int(time.time())}</CreateTime>\
-                <MsgType><![CDATA[text]]></MsgType>\
-                <Content><![CDATA[{content}]]></Content>\
-            </xml>"
+        return (
+            "<xml>"
+            f"<ToUserName><![CDATA[{from_user}]]>"
+            f"</ToUserName><FromUserName><![CDATA[{to_user}]]>"
+            "</FromUserName><CreateTime>{int(time.time())}</CreateTime>"
+            "<MsgType><![CDATA[text]]></MsgType>"
+            f"<Content><![CDATA[{content}]]></Content>"
+            "</xml>"
+        )
 
     def check_token(self, data):
         signature = head(data.get("signature"))
