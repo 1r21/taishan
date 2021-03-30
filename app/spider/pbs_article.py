@@ -1,16 +1,18 @@
 import os
-import logging
+
 from datetime import datetime
 from pathlib import Path
+from enum import Enum
 from os import environ as env
 
 import pytz
 import requests
 from lxml import etree
 
-from app.core.article import Article, ArtState
+from app.core.article import Article
 from app.libs.db import db_helper
 from app.libs.util import head
+from app.libs.logger import LoggerHandler
 from app.sdk.weixin import Weixin
 from app.sdk.dingding import Bot as DDBot
 from app.sdk.qiniu import Qiniu
@@ -18,8 +20,8 @@ from app.sdk.ghost import Ghost
 from app.setting import WEB_APP_URL, FILE_SERVER_URL
 
 tz = pytz.timezone("America/New_York")
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = LoggerHandler("app.spider")
+
 
 # set retries number
 requests.adapters.DEFAULT_RETRIES = 15
@@ -33,6 +35,13 @@ HTTP_PROXY = env.get("HTTP_PROXY")
 HTTPS_PROXY = env.get("HTTPS_PROXY")
 
 
+class SpyState(Enum):
+    SUCCESS = "Got it"
+    NOT_PREPARE = "Not prepare"
+    EXISTED = "It existed"
+    NO_TRANSCRIPT = "No transcript"
+
+
 class PBSArticle(Article):
     def __init__(self, **kw) -> None:
         Article.__init__(self, **kw)
@@ -41,18 +50,25 @@ class PBSArticle(Article):
     def run(self):
         self.__get_latest_article(TARGET_URL)
         if not self.title:
-            return ArtState.NOT_PREPARE
+            return SpyState.NOT_PREPARE
 
         article = self.__has_base_article()
 
         if article:
-            transcript = head(article)
-            return ArtState.EXISTED if transcript else self.__get_transcript()
+            article_id, image_url, audio_url, audio_from, transcript = article
+            self.id = article_id
+            self.image_url = image_url
+            self.audio_url = audio_url
+            self.audio_from = audio_from
+            if transcript:
+                return SpyState.EXISTED
+            return self.__get_transcript()
 
         image_url = self.save_assets(self.image_from, self.date, file_type="image")
         audio_from, audio_url = self.__get_audio()
         self.image_url = image_url
         self.audio_url = audio_url
+        self.audio_from = audio_from
 
         insert_article = (
             "INSERT INTO news (title, audio_url, image_url, source, audio_from, image_from, date) "
@@ -67,9 +83,8 @@ class PBSArticle(Article):
             self.image_from,
             self.date,
         )
-        article_id = db_helper.execute_commit(insert_article, values)
-        self.id = article_id
-        return ArtState.SUCCESS
+        self.id = db_helper.execute_commit(insert_article, values)
+        return SpyState.SUCCESS
 
     def __get_latest_article(self, url):
         article_list_rule = '//div[@class="latest__wrapper"]/article/div[@class="card-timeline__col-right"]'
@@ -120,12 +135,14 @@ class PBSArticle(Article):
         if summary and transcript:
             sql = "UPDATE news SET summary = %s, transcript = %s WHERE title = %s"
             db_helper.execute_commit(sql, (summary, transcript, self.title))
-            return ArtState.SUCCESS
-        return ArtState.NO_TRANSCRIPT
+            self.summary = summary
+            self.transcript = transcript
+            return SpyState.SUCCESS
+        return SpyState.NO_TRANSCRIPT
 
     # it had audio,but transcript may be not
     def __has_base_article(self):
-        query = "SELECT transcript FROM news WHERE title = %s"
+        query = "SELECT id, image_url, audio_url, audio_from, transcript FROM news WHERE title = %s"
         return db_helper.fetchone(query, self.title)
 
     @staticmethod
@@ -147,7 +164,7 @@ class PBSArticle(Article):
                 wx = Weixin()
                 wx.upload_material(dstFile, "voice")
         except Exception as e:
-            print("Save Assets Err: ", e)
+            logger.error(e)
 
         return asset_name
 
@@ -194,22 +211,17 @@ class PBSArticle(Article):
 
 
 class Automation(PBSArticle):
-    def __init__(self, date) -> None:
+    def __init__(self, date=datetime.now(tz).date()) -> None:
         PBSArticle.__init__(self, date=date)
 
     def start(self):
-        s_date = self.format_date("%Y-%m-%d")
-        logger.info(f"[{s_date}]:Start Crawl...")
         art_status = self.run()
-        logger.info(f"Crawl Result: {art_status.value}")
-        if art_status is ArtState.SUCCESS:
-            if self.id:
-                self.send_dd()
-                if self.transcript:
-                    self.send_wx()
-                    self.send_ghost()
-            else:
-                print("No Articles!")
+        if art_status is SpyState.SUCCESS:
+            self.send_dd()
+            if self.transcript:
+                self.send_wx()
+                self.send_ghost()
+        return art_status
 
     def send_dd(self):
         # 05-12-2020
@@ -226,21 +238,27 @@ class Automation(PBSArticle):
         template = DDBot.get_template(
             msg_type, title=f_date, content=content, pic_url=pic_url, msg_url=msg_url
         )
-        r_dict = dd_bot.send(template)
-        logger.info(f"Push Result : {r_dict.get('errmsg')}")
+        dd_info = dd_bot.send(template)
+        logger.info(f"Send Dingding({msg_type}): {dd_info.get('errmsg')}")
 
+    # upload weixin official account
     def send_wx(self):
-        # upload weixin official account
         asset_path = self.get_asset_path(self.date, "image")
-        wx = Weixin()
-        wx_message = wx.add_material(asset_path, **self.__compose_article())
-        logger.info(f"Add WX Materal : {wx_message}")
+        try:
+            wx = Weixin()
+            wx_message = wx.add_material(asset_path, **self.__compose_article())
+            logger.info(f"Send Weixin: {wx_message}")
+        except Exception as e:
+            logger.error(e)
 
+    # publish ghost
     def send_ghost(self):
-        # publish ghost
-        blog = Ghost()
-        g_message = blog.publish(**self.__compose_article())
-        logger.info(f"publish ghost : {g_message}")
+        try:
+            blog = Ghost()
+            g_message = blog.send(**self.__compose_article())
+            logger.info(f"Send Ghost: {g_message}")
+        except Exception as e:
+            logger.error(e)
 
     def __compose_article(self):
         return dict(
@@ -254,8 +272,13 @@ class Automation(PBSArticle):
         )
 
 
-today = datetime.now(tz).date()
-automation = Automation(today)
-
 if __name__ == "__main__":
-    automation.start()
+    try:
+        today = datetime.now(tz).date()
+        s_date = today.format_date("%Y-%m-%d")
+        logger.info(f"[{s_date}]: Start Crawl...")
+        automation = Automation(today)
+        art_status = automation.start()
+        logger.info(f"Crawl status: {art_status.value}")
+    except Exception as e:
+        logger.error(e)

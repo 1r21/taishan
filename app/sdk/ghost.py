@@ -16,7 +16,7 @@ class Ghost:
         self.api_url = api_url
         self.status = status
 
-    def publish(self, *, article_id, title, transcript, image_url, date, source, **kw):
+    def send(self, *, article_id, title, transcript, image_url, date, source, **kw):
         body = self.__gen_body(article_id, title, transcript, image_url, date, source)
         headers = {"Authorization": f"Ghost {self.token}"}
         url = f"{GHOST_URL}/ghost/api/v3/admin/posts/"

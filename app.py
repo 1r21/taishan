@@ -6,7 +6,8 @@ from app.libs.response import show_reponse, Status
 
 # https://stackoverflow.com/questions/43393764/python-3-6-project-structure-leads-to-runtimewarning
 # registy router first (can't import in app/__init__.py)
-from app.api import *
+from app.api.web import *
+from app.api.admin import *
 
 
 def application(environ, start_response):

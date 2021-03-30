@@ -1,13 +1,3 @@
-from enum import Enum
-
-
-class ArtState(Enum):
-    SUCCESS = "Got it"
-    NOT_PREPARE = "Not prepare"
-    EXISTED = "It existed"
-    NO_TRANSCRIPT = "No transcript"
-
-
 class Article:
     def __init__(self, **kwargs) -> None:
         self.id = kwargs.get("id")

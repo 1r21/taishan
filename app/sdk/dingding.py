@@ -46,11 +46,6 @@ class Bot:
 
     @staticmethod
     def __get_link_template(title, content, pic_url, msg_url):
-        # title = kwargs.get("title")
-        # content = kwargs.get("content")
-        # pic_url = kwargs.get("pic_url")
-        # msg_url = kwargs.get("msg_url")
-
         return {
             "msgtype": "link",
             "link": {
@@ -63,8 +58,6 @@ class Bot:
 
     @staticmethod
     def __get_text_template(content, is_at_all=True):
-        # content = kwargs.get("content")
-        # is_at_all = kwargs.get("is_at_all") or True
         return {
             "msgtype": "text",
             "text": {"content": content},

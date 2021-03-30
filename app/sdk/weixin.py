@@ -101,7 +101,7 @@ class Weixin:
     @staticmethod
     def __checkKey(appid, secret):
         if not (appid and secret):
-            raise ValueError("WeixinAuthSign : Invalid key")
+            raise ValueError("WeixinAuthSign: Invalid key")
 
     @staticmethod
     def __gen_article_payload(article_id, title, summary, thumb_media_id, content):

@@ -2,6 +2,7 @@ from functools import wraps
 
 import jwt
 
+from app.libs.util import head
 from app.libs.db import db_helper
 from app.libs.variable import ROUTE, request
 from app.setting import TOKEN_SALT
@@ -16,11 +17,11 @@ def route(url):
 
 def check_user_authed(token):
     user_decode = jwt.decode(token.encode(), TOKEN_SALT, algorithms=["HS256"])
-    id = user_decode.get("id")
+    user_id = user_decode.get("id")
     username = user_decode.get("username")
-    if len(id) > 0:
+    if user_id:
         sql = "SELECT id, username FROM users WHERE id=%s and username=%s"
-        user = db_helper.fetchone(sql, (id[0], username))
+        user = db_helper.fetchone(sql, (head(user_id), username))
         return bool(user)
     return False
 

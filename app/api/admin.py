@@ -2,13 +2,14 @@
 import time
 import jwt
 
-from app.setting import TOKEN_EXP, TOKEN_SALT, FILE_SERVER_URL
+from app.setting import TOKEN_EXP, TOKEN_SALT, FILE_SERVER_URL, WEB_APP_URL
 from app.libs.db import db_helper
-from app.libs.util import make_password
+from app.libs.util import make_password, head
 from app.libs.decorator import route, login_required
 from app.libs.response import show_reponse, Status
 from app.libs.variable import request
-from app.spider.pbs_article import automation
+from app.sdk.dingding import Bot as DDBot
+from app.spider.pbs_article import Automation
 
 # admin user
 @route("/admin/user")
@@ -19,12 +20,14 @@ def login():
     username = data.get("username")
     password = data.get("password")
     query = "SELECT id FROM users WHERE username = %s and password = %s"
-    user_id = db_helper.fetchone(
-        query, (username, make_password(password, TOKEN_SALT))
-    )
-    if user_id:
+    user = db_helper.fetchone(query, (username, make_password(password, TOKEN_SALT)))
+    if not user:
         return show_reponse(code=Status.no_auth)
-    payload = {"id": user_id[0], "username": username, "exp": time.time() + TOKEN_EXP}
+    payload = {
+        "id": str(head(user)),
+        "username": username,
+        "exp": time.time() + TOKEN_EXP,
+    }
     token = jwt.encode(payload, TOKEN_SALT, algorithm="HS256")
     return show_reponse(data={"token": token.decode("utf8"), "username": username})
 
@@ -32,9 +35,12 @@ def login():
 @route("/admin/crawl")
 @login_required
 def start_crawl():
-    automation.start()
-    code = Status.success if message == "Ok" else Status.other
-    return show_reponse(code=code, message=message)
+    try:
+        automation = Automation()
+        art_status = automation.start()
+        return show_reponse(code=Status.success, message=art_status.value)
+    except:
+        return show_reponse(code=Status.other)
 
 
 @route("/admin/news")
@@ -44,17 +50,10 @@ def get_news():
         "SELECT id, title, summary, transcript, audio_url, image_url, source, date FROM news "
         "ORDER BY date desc"
     )
-    news = db_helper.execute_sql(sql)
+    articles = db_helper.execute_sql(sql)
     data = []
-    for item in news:
-        id = item[0]
-        title = item[1]
-        summary = item[2]
-        transcript = item[3]
-        audio_url = item[4]
-        image_url = item[5]
-        source = item[6]
-        date = item[7]
+    for article in articles:
+        id, title, summary, transcript, audio_url, image_url, source, date = article
         data.append(
             dict(
                 id=id,
@@ -79,9 +78,11 @@ def delete_news():
         return show_reponse(code=Status.other, message="param error")
     article_id = data.get("id")
     sql = "DELETE FROM news WHERE id = %s"
-    message = exec_sql(sql, article_id)
-    code = Status.success if message == "Ok" else Status.other
-    return show_reponse(code=code, message=message)
+    try:
+        db_helper.execute_commit(sql, article_id)
+        return show_reponse(code=Status.success)
+    except Exception as e:
+        return show_reponse(code=Status.other)
 
 
 @route("/admin/send/news")
@@ -93,19 +94,20 @@ def send_dd_message():
     if not data:
         return show_reponse(code=err_code, message="Param Error")
     article_id = data.get("id")
-    sql = "SELECT date, title, summary, image_url FROM news WHERE id = %s"
-    result = query_size(sql, article_id)
-    if result:
-        article = result[0]
-        f_date = article[0].strftime("%d-%m-%Y")
-        r_dict = send_message(
-            id=article_id,
-            title=f"{f_date}:{article[1]}",
-            content=article[2],
-            picUrl=f"image/{article[3]}",
+    sql = "SELECT date, title, image_url FROM news WHERE id = %s"
+    article = db_helper.fetchone(sql, article_id)
+    if article:
+        date, title, image_url = article
+        dd_bot = DDBot()
+        template = DDBot.get_template(
+            title=date.strftime("%d-%m-%Y"),
+            content=title,
+            pic_url=f"{FILE_SERVER_URL}/image/{image_url}",
+            msg_url=f"{WEB_APP_URL}/detail/{article_id}",
         )
-        code = r_dict.get("errcode")
-        err_message = r_dict.get("errmsg")
+        dd_info = dd_bot.send(template)
+        code = dd_info.get("errcode")
+        err_message = dd_info.get("errmsg")
         if code == 0:
             err_code = Status.success
     return show_reponse(code=err_code, message=err_message)

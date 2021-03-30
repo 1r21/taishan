@@ -1,10 +1,15 @@
+from logging import Logger
 from os import environ as env
 
 from qiniu import Auth, put_file, BucketManager
 
+from app.libs.logger import LoggerHandler
+
 QINIU_ACCESS_KEY = env.get("QINIU_ACCESS_KEY")
 QINIU_SECRET_KEY = env.get("QINIU_SECRET_KEY")
 QINIU_BUCKET_NAME = env.get("QINIU_BUCKET_NAME")
+
+logger = LoggerHandler(__name__)
 
 
 class Qiniu:
@@ -18,11 +23,11 @@ class Qiniu:
         # file info
         ret, _ = self.bucket.stat(QINIU_BUCKET_NAME, self.filename)
         if not ret or "hash" not in ret:
-            print(f"{self.filename} start upload...")
+            logger.info(f"{self.filename} start upload...")
             put_file(self.token, self.filename, self.path)
-            print(f"{self.filename} end upload!")
+            logger.info(f"{self.filename} end upload!")
         else:
-            print(f"{self.filename} already exists")
+            logger.info(f"{self.filename} already exists")
 
     @property
     def token(self):

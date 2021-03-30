@@ -1,4 +1,4 @@
-from app.libs.db import query_all, query_size
+from app.libs.db import db_helper
 from app.libs.decorator import route
 from app.libs.response import Status, show_reponse
 from app.libs.variable import request
@@ -20,13 +20,10 @@ def favicon():
 def get_news():
     # date desc
     sql = "SELECT id, title, image_url, date FROM news ORDER BY date DESC"
-    news = query_all(sql)
+    articles = db_helper.execute_sql(sql)
     data = []
-    for item in news:
-        id = item[0]
-        title = item[1]
-        image_url = item[2]
-        date = item[3]
+    for article in articles:
+        id, title, image_url, date = article
         data.append(
             dict(
                 id=id,
@@ -46,15 +43,9 @@ def get_news_by_id():
         return show_reponse(code=Status.other, message="param error")
     article_id = data.get("id")
     sql = "SELECT title, source, image_url, transcript, date, audio_url FROM news WHERE id = %s"
-    result = query_size(sql, article_id)
-    if result:
-        article = result[0]
-        title = article[0]
-        source = article[1]
-        image_url = article[2]
-        transcript = article[3]
-        date = article[4]
-        audio_url = article[5]
+    article = db_helper.fetchone(sql, article_id)
+    if article:
+        title, source, image_url, transcript, date, audio_url = article
         detail = dict(
             title=title,
             transcript=transcript,

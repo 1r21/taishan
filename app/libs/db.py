@@ -60,7 +60,6 @@ db_helper = DBHelper()
 if __name__ == "__main__":
     try:
         result = db_helper.fetchone("SELECT title FROM news WHERE id = %s", 2)
-        print(result)
         sql = "UPDATE news SET title = %s WHERE id = 2"
         res = db_helper.execute_commit(sql, "hello world")
     except Exception as e:
