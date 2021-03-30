@@ -243,7 +243,7 @@ class Automation(PBSArticle):
 
     # upload weixin official account
     def send_wx(self):
-        asset_path = self.get_asset_path(self.date, "image")
+        asset_path, _ = self.get_asset_path(self.date, "image")
         try:
             wx = Weixin()
             wx_message = wx.add_material(asset_path, **self.__compose_article())
@@ -275,9 +275,9 @@ class Automation(PBSArticle):
 if __name__ == "__main__":
     try:
         today = datetime.now(tz).date()
-        s_date = today.format_date("%Y-%m-%d")
-        logger.info(f"[{s_date}]: Start Crawl...")
         automation = Automation(today)
+        s_date = automation.format_date("%Y-%m-%d")
+        logger.info(f"[{s_date}]: Start Crawl...")
         art_status = automation.start()
         logger.info(f"Crawl status: {art_status.value}")
     except Exception as e:

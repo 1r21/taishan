@@ -13,14 +13,17 @@ PASSWORD = env.get("PASSWORD")
 
 class DBHelper:
     def __init__(self) -> None:
-        self.conn = pymysql.connect(
-            host=HOST,
-            port=int(PORT),
-            db=DB_NAME,
-            user=USER_NAME,
-            password=PASSWORD,
-            charset="utf8mb4",
-        )
+        try:
+            self.conn = pymysql.connect(
+                host=HOST,
+                port=int(PORT),
+                db=DB_NAME,
+                user=USER_NAME,
+                password=PASSWORD,
+                charset="utf8mb4",
+            )
+        except Exception as e:
+            raise e
 
     # read
     def execute_sql(self, sql):

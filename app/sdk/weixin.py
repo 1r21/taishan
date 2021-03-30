@@ -86,7 +86,8 @@ class Weixin:
             "appid": self.appid,
             "secret": self.secret,
         }
-        return self.make_request("get", url, params=params)
+        data = self.make_request("get", url, params=params)
+        return data.get("access_token")
 
     @staticmethod
     def make_request(method, url, **kwargs):
@@ -94,9 +95,9 @@ class Weixin:
         data = req.json()
         code = data.get("errcode")
         message = data.get("errmsg")
-        if code == 0:
-            return data
-        raise ValueError(message)
+        if code and code != 0:
+            raise ValueError(message)
+        return data
 
     @staticmethod
     def __checkKey(appid, secret):
