@@ -1,20 +1,20 @@
 from datetime import datetime
 from app.libs.util import make_password
-from app.libs.db import exec_sql, query_size
+from app.libs.db import db_helper
 from app.setting import TOKEN_SALT
 
 
 def gen_user(uname, u_pass):
     query = "SELECT username FROM `users` WHERE username = %s"
-    username = query_size(query, uname)
+    username = db_helper.fetchone(query, uname)
     if username:
         return "It Exist"
 
     insert_user = "INSERT INTO users (username, password, datetime) VALUES (%s, %s, %s)"
 
-    password = (u_pass, TOKEN_SALT)
+    password = make_password(u_pass, TOKEN_SALT)
     values = (uname, password, datetime.now())
-    return exec_sql(insert_user, values)
+    return db_helper.execute_commit(insert_user, values)
 
 
 if __name__ == "__main__":
