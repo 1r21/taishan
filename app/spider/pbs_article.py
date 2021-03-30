@@ -8,11 +8,11 @@ import pytz
 import requests
 from lxml import etree
 
-from app.core.article import Article
+from app.core.article import Article, ArtState
 from app.libs.db import db_helper
 from app.libs.util import head
 from app.sdk.weixin import Weixin
-from app.sdk.dingding import Bot
+from app.sdk.dingding import Bot as DDBot
 from app.sdk.qiniu import Qiniu
 from app.sdk.ghost import Ghost
 from app.setting import WEB_APP_URL, FILE_SERVER_URL
@@ -36,18 +36,18 @@ HTTPS_PROXY = env.get("HTTPS_PROXY")
 class PBSArticle(Article):
     def __init__(self, **kw) -> None:
         Article.__init__(self, **kw)
-        self.date = self.format_date(self.date)
+        self.date = self.str_format_date(self.date)
 
     def run(self):
         self.__get_latest_article(TARGET_URL)
         if not self.title:
-            return "News is still on the way!"
+            return ArtState.NOT_PREPARE
 
         article = self.__has_base_article()
 
         if article:
             transcript = head(article)
-            return "News Exists" if transcript else self.__get_transcript()
+            return ArtState.EXISTED if transcript else self.__get_transcript()
 
         image_url = self.save_assets(self.image_from, self.date, file_type="image")
         audio_from, audio_url = self.__get_audio()
@@ -69,7 +69,7 @@ class PBSArticle(Article):
         )
         article_id = db_helper.execute_commit(insert_article, values)
         self.id = article_id
-        return self.title
+        return ArtState.SUCCESS
 
     def __get_latest_article(self, url):
         article_list_rule = '//div[@class="latest__wrapper"]/article/div[@class="card-timeline__col-right"]'
@@ -120,8 +120,8 @@ class PBSArticle(Article):
         if summary and transcript:
             sql = "UPDATE news SET summary = %s, transcript = %s WHERE title = %s"
             db_helper.execute_commit(sql, (summary, transcript, self.title))
-            return "Fetch Transcript Success"
-        return "No Transcript"
+            return ArtState.SUCCESS
+        return ArtState.NO_TRANSCRIPT
 
     # it had audio,but transcript may be not
     def __has_base_article(self):
@@ -187,7 +187,7 @@ class PBSArticle(Article):
             raise Exception(f"Fetch Fail: {e}")
 
     @staticmethod
-    def format_date(date):
+    def str_format_date(date):
         if type(date) == str:
             return datetime.strptime(date, "%Y-%m-%d")
         return date
@@ -198,42 +198,49 @@ class Automation(PBSArticle):
         PBSArticle.__init__(self, date=date)
 
     def start(self):
-        s_date = self.date.strftime("%Y-%m-%d")
+        s_date = self.format_date("%Y-%m-%d")
         logger.info(f"[{s_date}]:Start Crawl...")
-        result = self.run()
-        logger.info(f"Crawl Result: {result}")
-        if self.id:
-            r_dict = self.send()
-            logger.info(f"Push Result : {r_dict.get('errmsg')}")
-            if self.transcript:
-                # upload weixin official account
-                asset_path = self.get_asset_path(self.date, "image")
-                wx = Weixin()
-                wx_message = wx.add_material(asset_path, **self.__compose_article())
-                logger.info(f"Add WX Materal : {wx_message}")
-                # publish ghost
-                blog = Ghost()
-                g_message = blog.publish(**self.__compose_article())
-                logger.info(f"publish ghost : {g_message}")
-        else:
-            print("No Articles!")
+        art_status = self.run()
+        logger.info(f"Crawl Result: {art_status.value}")
+        if art_status is ArtState.SUCCESS:
+            if self.id:
+                self.send_dd()
+                if self.transcript:
+                    self.send_wx()
+                    self.send_ghost()
+            else:
+                print("No Articles!")
 
-    def send(self):
+    def send_dd(self):
         # 05-12-2020
-        f_date = self.date.strftime("%d-%m-%Y")
+        f_date = self.format_date("%d-%m-%Y")
         tip_text = "Here comes the transcript ⬆️"
         msg_type = "link"
         content = self.title
         if self.transcript:
             msg_type = "text"
             content = tip_text
-        bot = Bot()
+        dd_bot = DDBot()
         pic_url = f"{FILE_SERVER_URL}/image/{self.image_url}"
         msg_url = f"{WEB_APP_URL}/detail/{self.id}" if id else WEB_APP_URL
-        template = Bot.get_template(
+        template = DDBot.get_template(
             msg_type, title=f_date, content=content, pic_url=pic_url, msg_url=msg_url
         )
-        return bot.send(template)
+        r_dict = dd_bot.send(template)
+        logger.info(f"Push Result : {r_dict.get('errmsg')}")
+
+    def send_wx(self):
+        # upload weixin official account
+        asset_path = self.get_asset_path(self.date, "image")
+        wx = Weixin()
+        wx_message = wx.add_material(asset_path, **self.__compose_article())
+        logger.info(f"Add WX Materal : {wx_message}")
+
+    def send_ghost(self):
+        # publish ghost
+        blog = Ghost()
+        g_message = blog.publish(**self.__compose_article())
+        logger.info(f"publish ghost : {g_message}")
 
     def __compose_article(self):
         return dict(
@@ -246,8 +253,9 @@ class Automation(PBSArticle):
             summary=self.summary,
         )
 
+
 today = datetime.now(tz).date()
 automation = Automation(today)
+
 if __name__ == "__main__":
-    # automation = Automation(today)
     automation.start()

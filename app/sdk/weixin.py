@@ -127,8 +127,8 @@ class Weixin:
         content = (
             html.replace("<ul", "<section")
             .replace("</ul>", "</section>")
-            .replace("<li", "section")
-            .replace("</li>", "</section>")
+            .replace("<li", "<div")
+            .replace("</li>", "</div>")
             .replace("vt__person--host", "")
             .replace("vt__person", "")
             .replace("vt__body", "")
@@ -174,10 +174,10 @@ class Bot:
             </xml>"
 
     def check_token(self, data):
-        signature = data.get("signature")[0]
-        timestamp = data.get("timestamp")[0]
-        nonce = data.get("nonce")[0]
-        echostr = data.get("echostr")[0]
+        signature = head(data.get("signature"))
+        timestamp = head(data.get("timestamp"))
+        nonce = head(data.get("nonce"))
+        echostr = head(data.get("echostr"))
 
         sha1 = hashlib.sha1()
         for param in [nonce, timestamp, self.salt]:
