@@ -1,6 +1,6 @@
 from app.libs.variable import request
 from app.libs.decorator import route
-from app.sdk.weixin import WXBot
+from app.sdk.weixin import Bot as WXBot
 
 
 @route("/wx")

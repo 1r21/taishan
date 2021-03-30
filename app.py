@@ -8,6 +8,7 @@ from app.libs.response import show_reponse, Status
 # registy router first (can't import in app/__init__.py)
 from app.api.web import *
 from app.api.admin import *
+from app.api.weixin import *
 
 
 def application(environ, start_response):
