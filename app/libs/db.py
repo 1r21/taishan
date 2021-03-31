@@ -13,8 +13,12 @@ PASSWORD = env.get("PASSWORD")
 
 class DBHelper:
     def __init__(self) -> None:
-        try:
-            self.conn = pymysql.connect(
+        self.connection = None
+
+    @property
+    def conn(self):
+        if not self.connection:
+            self.connection = pymysql.connect(
                 host=HOST,
                 port=int(PORT),
                 db=DB_NAME,
@@ -22,48 +26,48 @@ class DBHelper:
                 password=PASSWORD,
                 charset="utf8mb4",
             )
-        except Exception as e:
-            raise e
+            return self.connection
+        return self.connection
+
+    @property
+    def cusor(self):
+        return self.conn.cursor()
 
     # read
     def execute_sql(self, sql):
-        try:
-            with self.conn.cursor() as cursor:
-                cursor.execute(sql)
-                return cursor.fetchall()
-        except pymysql.Error as e:
-            print("Db Query Err: ", e)
+        conn = self.conn
+        with self.cusor as c:
+            c.execute(sql)
+            conn.commit()
+            return c.fetchall()
 
     # write (update,delete etc.)
     def execute_commit(self, sql, args=None):
+        conn = self.conn
         try:
-            with self.conn.cursor() as cursor:
-                cursor.execute(sql, args)
-                self.conn.commit()
-                return cursor.lastrowid
+            with self.cusor as c:
+                c.execute(sql, args)
+                conn.commit()
+                return c.lastrowid
         except pymysql.Error as e:
-            self.conn.rollback()
+            conn.rollback()
             raise ValueError(f"DB Commit Err:", e)
 
     def fetchone(self, sql, args=None):
-        try:
-            with self.conn.cursor() as cursor:
-                cursor.execute(sql, args)
-                return cursor.fetchone()
-        except pymysql.Error as e:
-            print("Db Query Err: ", e)
-
-    def close(self):
-        self.conn.cursor().close()
-        self.conn.close()
+        conn = self.conn
+        with self.cusor as c:
+            c.execute(sql, args)
+            conn.commit()
+            return c.fetchone()
 
 
 db_helper = DBHelper()
 
 if __name__ == "__main__":
     try:
-        result = db_helper.fetchone("SELECT title FROM news WHERE id = %s", 2)
-        sql = "UPDATE news SET title = %s WHERE id = 2"
+        result = db_helper.fetchone("SELECT title FROM news WHERE id = %s", 32)
+        sql = "UPDATE news SET title = %s WHERE id = 32"
         res = db_helper.execute_commit(sql, "hello world")
+        print("result", res)
     except Exception as e:
         print("err", e)
