@@ -5,7 +5,7 @@ from app.setting import TOKEN_SALT
 
 
 def gen_user(uname, u_pass):
-    query = "SELECT username FROM `users` WHERE username = %s"
+    query = "SELECT username FROM users WHERE username = %s"
     username = db_helper.fetchone(query, uname)
     if username:
         return "It Exist"

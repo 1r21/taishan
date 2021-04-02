@@ -1,8 +1,8 @@
+from app.libs.response import Status, show_reponse
 from functools import wraps
 
 import jwt
 
-from app.libs.util import head
 from app.libs.db import db_helper
 from app.libs.variable import ROUTE, request
 from app.setting import TOKEN_SALT
@@ -16,14 +16,22 @@ def route(url):
 
 
 def check_user_authed(token):
-    user_decode = jwt.decode(token.encode(), TOKEN_SALT, algorithms=["HS256"])
-    user_id = user_decode.get("id")
-    username = user_decode.get("username")
-    if user_id:
-        sql = "SELECT id, username FROM users WHERE id=%s and username=%s"
-        user = db_helper.fetchone(sql, (head(user_id), username))
-        return bool(user)
-    return False
+    try:
+        user_payload = jwt.decode(token, TOKEN_SALT, algorithms=["HS256"])
+        user_id = user_payload.get("id")
+        username = user_payload.get("username")
+        if user_id:
+            sql = "SELECT id, username FROM users WHERE id=%s and username=%s"
+            return db_helper.fetchone(sql, (user_id, username))
+        raise ValueError("Auth failed")
+    except jwt.ExpiredSignatureError as e:
+        raise jwt.ExpiredSignature("Signature has expired")
+    except jwt.InvalidTokenError as e:
+        raise jwt.InvalidTokenError("Invalid token type")
+    except jwt.InvalidSignatureError as e:
+        raise jwt.InvalidSignatureError("Signature is invalid")
+    except Exception as e:
+        raise e
 
 
 def login_required(f):
@@ -31,8 +39,9 @@ def login_required(f):
     def wrapper(*args, **kargs):
         headers = request.get("headers")
         token = headers.get("X-Token")
-        if not token or not check_user_authed(token):
-            return {"message": "No Auth"}
-        return f(*args, **kargs)
+        if not token:
+            raise ValueError("No token param")
+        if check_user_authed(token):
+            return f(*args, **kargs)
 
     return wrapper

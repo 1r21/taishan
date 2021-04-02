@@ -17,6 +17,9 @@ content-type: application/json
 GET {{baseUrl}}/crawl
 X-Token: {{authToken}}
 
+###
+GET {{baseUrl}}/news
+X-Token: {{authToken}}
 
 ###
 POST {{baseUrl}}/delete/news

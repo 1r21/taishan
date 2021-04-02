@@ -35,7 +35,7 @@ class Ghost:
         iat = int(date.now().timestamp())
         header = {"alg": "HS256", "typ": "JWT", "kid": id}
         payload = {"iat": iat, "exp": iat + 5 * 60, "aud": "/v3/admin/"}
-        return jwt.encode(payload, bytes.fromhex(secret), "HS256", header).decode()
+        return jwt.encode(payload, bytes.fromhex(secret), "HS256", header)
 
     def __gen_body(
         self, article_id, title, transcript, image_url, date, source

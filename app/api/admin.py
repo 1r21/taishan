@@ -29,7 +29,7 @@ def login():
         "exp": time.time() + TOKEN_EXP,
     }
     token = jwt.encode(payload, TOKEN_SALT, algorithm="HS256")
-    return show_reponse(data={"token": token.decode("utf8"), "username": username})
+    return show_reponse(data={"token": token, "username": username})
 
 
 @route("/admin/crawl")
@@ -44,6 +44,7 @@ def start_crawl():
 
 
 @route("/admin/news")
+@login_required
 def get_news():
     # date desc
     sql = (

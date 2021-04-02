@@ -1,7 +1,7 @@
 lxml == 4.* 
-PyMySQL==0.10.1
-pytz==2020.4
+PyMySQL==1.0.2
+pytz==2021.1
 requests==2.25.0
-PyJWT==1.7.1
+PyJWT==2.0.1
 python-dotenv==0.15
-qiniu==7.3.0
+qiniu==7.3.1
