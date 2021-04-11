@@ -20,14 +20,16 @@ class Ghost:
         body = self.__gen_body(article_id, title, transcript, image_url, date, source)
         headers = {"Authorization": f"Ghost {self.token}"}
         url = f"{GHOST_URL}/ghost/api/v3/admin/posts/"
-        data = requests.post(url, json=body, headers=headers)
-        posts = data.json().get("posts")
-        return "ok" if posts else "Pulish Fail"
+        info = requests.post(url, json=body, headers=headers)
+        data = info.json()
+        posts = data.get("posts")
+        errors = data.get("errors")
+        return "ok" if posts else errors
 
     @property
     def token(self):
         # Split the key into ID and SECRET
-        id, secret = GHOST_KEY.split(":")
+        id, secret = self.key.split(":")
 
         # https://www.dazhuanlan.com/2020/01/06/5e128ff2cc17f/
         # Prepare header and payload
@@ -49,7 +51,7 @@ class Ghost:
                     "mobiledoc": json.dumps(mobiledoc),
                     "tags": ["pbs"],
                     "custom_excerpt": "news,english",
-                    "feature_image": f"{GHOST_URL}/static/image/{image_url}",
+                    "feature_image": f"{GHOST_URL}/static/image/{image_url}?date={date}",
                     "status": self.status,
                 }
             ]
@@ -99,14 +101,14 @@ if __name__ == "__main__":
     try:
         article = {
             "article_id": 1,
-            "title": "title",
+            "title": "test-article",
             "transcript": "transcript",
-            "image_url": "image_url",
+            "image_url": "pbs_newswrap_20210409.jpg",
             "date": date.now().date(),
             "source": "source",
         }
         blog = Ghost(status="draft")
-        result = blog.publish(**article)
+        result = blog.send(**article)
         print("result", result)
     except Exception as e:
         print("e", e)
