@@ -30,5 +30,5 @@ static/image/*.jpg
 .env
 
 # useless test
-playground.py
+playground.*
 *.session.sql

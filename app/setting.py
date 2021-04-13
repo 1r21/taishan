@@ -1,5 +1,6 @@
 from os import environ as env
 
+PORT = 8081
 # jwt
 TOKEN_SALT = env.get("TOKEN_SALT")
 TOKEN_EXP = 30 * 60

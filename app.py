@@ -3,6 +3,7 @@ from urllib.parse import parse_qs
 
 from app.libs.variable import ROUTE, request
 from app.libs.response import show_reponse, Status
+from app.setting import PORT
 
 # https://stackoverflow.com/questions/43393764/python-3-6-project-structure-leads-to-runtimewarning
 # registy router first (can't import in app/__init__.py)
@@ -51,6 +52,6 @@ def application(environ, start_response):
 if __name__ == "__main__":
     from wsgiref.simple_server import make_server
 
-    with make_server("", 8080, application) as httpd:
-        print("Serving on port 8080...")
+    with make_server("", PORT, application) as httpd:
+        print(f"Serving on port {PORT}...")
         httpd.serve_forever()
