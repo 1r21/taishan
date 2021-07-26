@@ -1,9 +1,13 @@
 from app.libs.db import db_helper
+from app.libs.logger import LoggerHandler
 from app.libs.decorator import route
 from app.libs.response import Status, show_reponse
 from app.libs.variable import request
 from app.setting import FILE_SERVER_URL
 from app.sdk.baidu import BaiduT
+from app.graphql.schema import schema
+
+logger = LoggerHandler("api.web")
 
 
 @route("/")
@@ -14,6 +18,18 @@ def index():
 @route("/favicon.ico")
 def favicon():
     return None
+
+
+@route("/graphql")
+def graphql_entry():
+    data = request.get("data")
+    query = data.get("query")
+    result = schema.execute(query)
+    if result.errors:
+        (first_err,) = result.errors
+        logger.error(first_err)
+        return show_reponse(code=Status.other, message=f"{first_err}")
+    return show_reponse(data=result.data)
 
 
 @route("/api/news")
