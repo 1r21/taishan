@@ -15,18 +15,12 @@ def test_index_query():
 def test_detail_query():
     client = Client(schema)
     executed = client.execute(
-        """{
-            info: article(id: "218") {
-                src
-                title
+        """query GetArticle($id: String!) {
+            article(id: $id) {
+                date,
+                id
             }
-        }"""
+        }""",
+        variables={"id": "218"},
     )
-    assert executed == {
-        "data": {
-            "info": {
-                "src": "http://ai.chenggang.win/static/audio/pbs_newswrap_20210722.mp3",
-                "title": "News Wrap: DOJ announces strike force to tackle suspect gun networks",
-            }
-        }
-    }
+    assert executed == {"data": {"article": {"date": "2021-07-22", "id": "218"}}}
