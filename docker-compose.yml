@@ -21,6 +21,8 @@ services:
   # uwsgi
   api:
     build: .
+    # https://docs.docker.com/compose/compose-file/compose-file-v3/#build
+    # build image name
     image: server:taishan
     volumes:
       - ./app:/taishan/app
