@@ -24,7 +24,15 @@ def favicon():
 def graphql_entry():
     data = request.get("data")
     query = data.get("query")
-    result = schema.execute(query)
+    context = data.get("context")
+    variables = data.get("variables")
+    operation_name = data.get("operation_name")
+    result = schema.execute(
+        query,
+        context=context,
+        variables=variables,
+        operation_name=operation_name,
+    )
     if result.errors:
         (first_err,) = result.errors
         logger.error(first_err)

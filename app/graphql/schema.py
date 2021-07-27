@@ -31,9 +31,8 @@ class Character(graphene.Interface):
 
 class Article(graphene.ObjectType):
     class Meta:
+        description= "article info"
         interfaces = (Character,)
-
-    info = graphene.String()
 
 
 base_sql = "SELECT id, title, summary, transcript, audio_url, image_url, source, date FROM news"
