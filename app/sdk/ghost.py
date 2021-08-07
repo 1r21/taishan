@@ -49,7 +49,7 @@ class Ghost:
                     "title": title,
                     "slug": f"pbs-{article_id}",
                     "mobiledoc": json.dumps(mobiledoc),
-                    "tags": ["pbs"],
+                    "tags": ["资讯"],
                     "custom_excerpt": "news,english",
                     "feature_image": f"{GHOST_URL}/static/image/{image_url}?date={date}",
                     "status": self.status,
