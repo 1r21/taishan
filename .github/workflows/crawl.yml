@@ -5,14 +5,14 @@ name: Crawl information
 
 on:
   workflow_dispatch:
-  # schedule:
+  schedule:
     # At every 20th minute from 0 through 59 past every hour from 8 through 10
     # on every day-of-week from Sunday through Saturday.
     # 0-59/20 0-2 * * 0-6
-    # - cron: "30 0-2 * * 0-6"
+    - cron: "30 0-2 * * 0-6"
 
 jobs:
-  build:
+  crawl:
     runs-on: ubuntu-latest
     # choose an environment
     environment: crawl
@@ -48,10 +48,13 @@ jobs:
           DINGDING_PUSH: ${{ secrets.DINGDING_PUSH }}
           DINGDING_TOKEN: ${{ secrets.DINGDING_TOKEN }}
           DINGDING_ROBOT_KEY: ${{ secrets.DINGDING_ROBOT_KEY }}
-          # weixin
-          WX_APPID: ${{ secrets.WX_APPID }}
-          WX_SECRET: ${{ secrets.WX_SECRET }}
-          WX_SALT: ${{ secrets.WX_SALT }}
+          # weixin  (no fixed ip)
+          # WX_APPID: ${{ secrets.WX_APPID }}
+          # WX_SECRET: ${{ secrets.WX_SECRET }}
+          # WX_SALT: ${{ secrets.WX_SALT }}
           # website
           WEB_APP_URL: ${{ secrets.WEB_APP_URL }}
           FILE_SERVER_URL: ${{ secrets.FILE_SERVER_URL }}
+          # ghost
+          GHOST_KEY: ${{ secrets.GHOST_KEY }}
+          GHOST_URL: ${{ secrets.GHOST_URL }}
