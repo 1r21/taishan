@@ -19,9 +19,13 @@ from app.sdk.qiniu import Qiniu
 from app.sdk.ghost import Ghost
 from app.setting import WEB_APP_URL, FILE_SERVER_URL
 
-tz = pytz.timezone("America/New_York")
-logger = LoggerHandler("app.spider")
+TARGET_URL = env.get("TARGET_URL") or "https://www.pbs.org/newshour/latest"
+TIME_ZONE = env.get("TIME_ZONE") or "America/New_York"
+HTTP_PROXY = env.get("HTTP_PROXY")
+HTTPS_PROXY = env.get("HTTPS_PROXY")
 
+tz = pytz.timezone(TIME_ZONE)
+logger = LoggerHandler("app.spider")
 
 # set retries number
 requests.adapters.DEFAULT_RETRIES = 15
@@ -29,10 +33,6 @@ s = requests.session()
 # close useless connect
 s.keep_alive = False
 s.headers.update({"cache-control": "no-cache"})
-
-TARGET_URL = env.get("TARGET_URL") or "https://www.pbs.org/newshour/latest"
-HTTP_PROXY = env.get("HTTP_PROXY")
-HTTPS_PROXY = env.get("HTTPS_PROXY")
 
 
 class SpyState(Enum):
