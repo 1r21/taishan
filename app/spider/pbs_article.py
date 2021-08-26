@@ -45,10 +45,10 @@ class SpyState(Enum):
 class PBSArticle(Article):
     def __init__(self, **kw) -> None:
         Article.__init__(self, **kw)
-        self.date = self.str_format_date(self.date)
 
     def run(self):
         self.__get_latest_article(TARGET_URL)
+        self.date = self.str_format_date(self.date)
         if not self.title:
             return SpyState.NOT_PREPARE
 
@@ -87,11 +87,21 @@ class PBSArticle(Article):
         return SpyState.SUCCESS
 
     def __get_latest_article(self, url):
-        article_list_rule = '//div[@class="latest__wrapper"]/article/div[@class="card-timeline__col-right"]'
+        article_wrapper_rule = '//div[@class="latest__wrapper"]'
+        article_date_rule = '//h2[@class="latest__header"]'
+        article_list_rule = '//article/div[@class="card-timeline__col-right"]'
         article_rule = '//a[@class="card-timeline__title"]'
         title_rule = '//a[@class="card-timeline__title"]/span'
         image_rule = '//a[@class="card-timeline__img-link"]/img'
-        find_sections = etree.HTML(PBSArticle.fetch(url)).xpath(article_list_rule)
+
+        root_str = PBSArticle.fetch(url)
+        find_article_wrapper = etree.HTML(root_str).xpath(article_wrapper_rule)
+        root = etree.HTML(etree.tostring(head(find_article_wrapper)).decode())
+
+        date_str = head(root.xpath(article_date_rule)).text
+        self.date = datetime.strptime(date_str, "%A, %B %dth, %Y").date()
+
+        find_sections = root.xpath(article_list_rule)
         for item in find_sections:
             html = etree.HTML(etree.tostring(item).decode())
             find_titles = html.xpath(title_rule)
@@ -211,8 +221,8 @@ class PBSArticle(Article):
 
 
 class Automation(PBSArticle):
-    def __init__(self, date=datetime.now(tz).date()) -> None:
-        PBSArticle.__init__(self, date=date)
+    def __init__(self) -> None:
+        PBSArticle.__init__(self)
 
     def start(self):
         art_status = self.run()
@@ -274,10 +284,8 @@ class Automation(PBSArticle):
 
 if __name__ == "__main__":
     try:
-        today = datetime.now(tz).date()
-        automation = Automation(today)
-        s_date = automation.format_date("%Y-%m-%d")
-        logger.info(f"[{s_date}]: Start Crawl...")
+        logger.info(f"Start Crawl...")
+        automation = Automation()
         art_status = automation.start()
         logger.info(f"Crawl status: {art_status.value}")
     except Exception as e:
