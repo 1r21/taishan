@@ -1,5 +1,5 @@
 import os
-
+import re
 from datetime import datetime
 from pathlib import Path
 from enum import Enum
@@ -99,7 +99,10 @@ class PBSArticle(Article):
         root = etree.HTML(etree.tostring(head(find_article_wrapper)).decode())
 
         date_str = head(root.xpath(article_date_rule)).text
-        self.date = datetime.strptime(date_str, "%A, %B %dth, %Y").date()
+        # remove ordinal suffix
+        # Thursday, September 2nd, 2021 => Thursday, September 2, 2021
+        f_date_str = re.sub(r"st|nd|rd|th", "", date_str)
+        self.date = datetime.strptime(f_date_str, "%A, %B %d, %Y").date()
 
         find_sections = root.xpath(article_list_rule)
         for item in find_sections:
