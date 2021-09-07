@@ -101,7 +101,8 @@ class PBSArticle(Article):
         date_str = head(root.xpath(article_date_rule)).text
         # remove ordinal suffix
         # Thursday, September 2nd, 2021 => Thursday, September 2, 2021
-        f_date_str = re.sub(r"st|nd|rd|th", "", date_str)
+        # Monday, September 6th, 2021 => Monday, September 6, 2021
+        f_date_str = re.sub(r"(\d)(st|nd|rd|th)", r"\g<1>", date_str)
         self.date = datetime.strptime(f_date_str, "%A, %B %d, %Y").date()
 
         find_sections = root.xpath(article_list_rule)
