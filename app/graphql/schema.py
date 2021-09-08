@@ -31,7 +31,7 @@ class Character(graphene.Interface):
 
 class Article(graphene.ObjectType):
     class Meta:
-        description= "article info"
+        description = "article info"
         interfaces = (Character,)
 
 
@@ -43,18 +43,20 @@ class Query(graphene.ObjectType):
     list = graphene.List(lambda: Article)
     article = graphene.Field(Article, id=graphene.NonNull(graphene.String))
 
-    def resolve_root(root, info):
+    def resolve_root(self, info):
         return "this is index page"
 
-    def resolve_list(root, info):
+    def resolve_list(self, info):
         sql = f"{base_sql} ORDER BY date desc"
         articles = db_helper.execute_sql(sql)
         return list(map(_map_article, articles))
 
-    def resolve_article(root, info, id):
+    def resolve_article(self, info, id):
         sql = f"{base_sql} WHERE id = %s"
         article = db_helper.fetchone(sql, id)
-        return _map_article(article)
+        if article:
+            return _map_article(article)
+        raise Exception("News is not exist!")
 
 
 schema = graphene.Schema(query=Query)
