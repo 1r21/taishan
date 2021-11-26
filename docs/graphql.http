@@ -1,5 +1,20 @@
 @baseUrl = http://{{host}}:{{port}}/graphql
 
+# articles
+POST {{baseUrl}}
+Content-Type: application/json
+X-REQUEST-TYPE: GraphQL
+
+query GetArticles {
+    list {
+        id,
+        date,
+        title
+    }
+}
+
+###
+# article
 POST {{baseUrl}}
 Content-Type: application/json
 X-REQUEST-TYPE: GraphQL
@@ -7,7 +22,8 @@ X-REQUEST-TYPE: GraphQL
 query Get_Article($id: String!) {
     article(id: $id) {
         date,
-        title
+        title,
+        transcript,
     }
 }
 

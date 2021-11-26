@@ -1,19 +1,16 @@
 import graphene
-from graphql.execution.executor import resolve_field
+
 from app.libs.db import db_helper
 from app.setting import FILE_SERVER_URL
 
 
-def _map_article(article):
-    id, title, summary, transcript, audio_url, image_url, source, date = article
+def _map_base_article(article):
+    id, title, image_url, date, *_ = article
+
     return dict(
         id=id,
         title=title,
         cover=FILE_SERVER_URL + "/image/" + image_url,
-        summary=summary,
-        transcript=transcript,
-        src=FILE_SERVER_URL + "/audio/" + audio_url,
-        source=source,
         date=date.strftime("%Y-%m-%d"),
     )
 
@@ -35,9 +32,6 @@ class Article(graphene.ObjectType):
         interfaces = (Character,)
 
 
-base_sql = "SELECT id, title, summary, transcript, audio_url, image_url, source, date FROM news"
-
-
 class Query(graphene.ObjectType):
     root = graphene.String(description="when access / route")
     list = graphene.List(lambda: Article)
@@ -46,17 +40,22 @@ class Query(graphene.ObjectType):
     def resolve_root(self, info):
         return "this is index page"
 
-    def resolve_list(self, info):
-        sql = f"{base_sql} ORDER BY date desc"
+    def resolve_list(root, info):
+        sql = "SELECT id, title, image_url, date FROM news ORDER BY date DESC"
         articles = db_helper.execute_sql(sql)
-        return list(map(_map_article, articles))
+        return list(map(_map_base_article, articles))
 
-    def resolve_article(self, info, id):
-        sql = f"{base_sql} WHERE id = %s"
+    def resolve_article(root, info, id):
+        sql = "SELECT id, title, image_url, date, source, audio_url, transcript FROM news WHERE id = %s"
         article = db_helper.fetchone(sql, id)
-        if article:
-            return _map_article(article)
-        raise Exception("News is not exist!")
+        article_dict = _map_base_article(article)
+
+        *_, source, audio_url, transcript = article
+
+        article_dict["source"] = source
+        article_dict["src"] = FILE_SERVER_URL + "/audio/" + audio_url
+        article_dict["transcript"] = transcript
+        return article_dict
 
 
 schema = graphene.Schema(query=Query)
