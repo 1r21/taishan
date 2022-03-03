@@ -1,7 +1,5 @@
-from app.libs.response import Status, show_reponse
-from functools import wraps
-
 import jwt
+from functools import wraps
 
 from app.libs.db import db_helper
 from app.libs.variable import ROUTE, request
@@ -26,10 +24,10 @@ def check_user_authed(token):
         raise ValueError("Auth failed")
     except jwt.ExpiredSignatureError as e:
         raise jwt.ExpiredSignature("Signature has expired")
-    except jwt.InvalidTokenError as e:
-        raise jwt.InvalidTokenError("Invalid token type")
     except jwt.InvalidSignatureError as e:
         raise jwt.InvalidSignatureError("Signature is invalid")
+    except jwt.InvalidTokenError as e:
+        raise jwt.InvalidTokenError("Invalid token type")
     except Exception as e:
         raise e
 
