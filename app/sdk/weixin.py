@@ -9,9 +9,12 @@ from os import environ as env
 from lxml import etree
 import requests
 
+from app.libs.logger import LoggerHandler
 from app.libs.util import head
 from app.setting import WEB_APP_URL
 from .wx_words import words
+
+logger = LoggerHandler("app.wx")
 
 WX_APPID = env.get("WX_APPID")
 WX_SECRET = env.get("WX_SECRET")
@@ -22,15 +25,20 @@ class WXSign:
     BASE_URL = "https://api.weixin.qq.com/cgi-bin"
 
     def __init__(self, appid=WX_APPID, secret=WX_SECRET) -> None:
-        self.__checkKey(appid, secret)
-        self.appid = appid
-        self.secret = secret
+        try:
+            self.__checkKey(appid, secret)
+            self.appid = appid
+            self.secret = secret
+        except ValueError as e:
+            logger.info(e)
 
     def get_req_url(self, url):
         return f"{self.BASE_URL}{url}?access_token={self.__token}"
 
     def __get_jsapi_ticket(self):
-        req_url = f"{self.BASE_URL}/ticket/getticket?access_token={self.__token}&type=jsapi"
+        req_url = (
+            f"{self.BASE_URL}/ticket/getticket?access_token={self.__token}&type=jsapi"
+        )
         data = self.make_request("get", req_url)
         return data.get("ticket")
 
@@ -61,29 +69,30 @@ class WXSign:
             raise ValueError("WeixinAuthSign: Invalid key")
 
     def __create_nonce_str(self):
-        return ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(15))
+        return "".join(
+            random.choice(string.ascii_letters + string.digits) for _ in range(15)
+        )
 
     def __create_timestamp(self):
         return int(time.time())
 
     def sign(self, url):
         ret = {
-            'noncestr': self.__create_nonce_str(),
-            'jsapi_ticket': self.__get_jsapi_ticket(),
-            'timestamp': self.__create_timestamp(),
-            'url': url
+            "noncestr": self.__create_nonce_str(),
+            "jsapi_ticket": self.__get_jsapi_ticket(),
+            "timestamp": self.__create_timestamp(),
+            "url": url,
         }
 
         # sort by ascii
-        sign_str = '&'.join(['%s=%s' % (key.lower(), ret[key])
-                             for key in sorted(ret)])
+        sign_str = "&".join(["%s=%s" % (key.lower(), ret[key]) for key in sorted(ret)])
         # encode sha1
-        ret['signature'] = hashlib.sha1(sign_str.encode('utf-8')).hexdigest()
+        ret["signature"] = hashlib.sha1(sign_str.encode("utf-8")).hexdigest()
         return {
-            'appid': self.appid,
-            'noncestr': ret['noncestr'],
-            'timestamp': ret['timestamp'],
-            'signature': ret['signature'],
+            "appid": self.appid,
+            "noncestr": ret["noncestr"],
+            "timestamp": ret["timestamp"],
+            "signature": ret["signature"],
         }
 
 

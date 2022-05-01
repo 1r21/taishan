@@ -1,6 +1,7 @@
 import json
 from urllib.parse import parse_qs
 
+from app.libs.logger import LoggerHandler
 from app.libs.variable import ROUTE, request
 from app.libs.response import show_reponse, Status
 from app.setting import PORT
@@ -11,6 +12,7 @@ from app.api.web import *
 from app.api.admin import *
 from app.api.weixin import *
 
+logger = LoggerHandler("app")
 
 def application(environ, start_response):
     url = environ.get("PATH_INFO")
@@ -53,5 +55,5 @@ if __name__ == "__main__":
     from wsgiref.simple_server import make_server
 
     with make_server("", PORT, application) as httpd:
-        print(f"Serving on port {PORT}...")
+        logger.info(f"Serving on port {PORT}...")
         httpd.serve_forever()
