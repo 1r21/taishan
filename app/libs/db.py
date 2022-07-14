@@ -29,10 +29,10 @@ class DBHelper:
             raise Exception("Connect db fail")
 
     # read
-    def execute_sql(self, sql):
+    def execute_sql(self, sql, args=None):
         with self.connection as conn:
             with conn.cursor() as c:
-                c.execute(sql)
+                c.execute(sql, args)
                 return c.fetchall()
 
     # write (update,delete etc.)

@@ -2,6 +2,7 @@ from app.libs.db import db_helper
 from app.libs.logger import LoggerHandler
 from app.libs.decorator import route
 from app.libs.response import Status, show_reponse
+from app.libs.util import head
 from app.libs.variable import request
 from app.setting import FILE_SERVER_URL
 from app.sdk.baidu import BaiduT
@@ -42,9 +43,20 @@ def graphql_entry():
 
 @route("/api/news")
 def get_news():
+    query = request.get("qs")
+    page = 1
+    page_size = 10
+    if query:
+        page = int(head(query.get("page") or [1]))
+        page_size = int(head(query.get("pageSize") or [10]))
+
     # date desc
-    sql = "SELECT id, title, image_url, date FROM news ORDER BY date DESC"
-    articles = db_helper.execute_sql(sql)
+    sql = "SELECT id, title, image_url, date FROM news ORDER BY id DESC LIMIT %s OFFSET %s"
+    total_sql = "SELECT COUNT(*) FROM news"
+    limit = page_size
+    offset = (page - 1) * page_size
+    articles = db_helper.execute_sql(sql, (limit, offset))
+    (total,) = db_helper.fetchone(total_sql)
     data = []
     for article in articles:
         id, title, image_url, date = article
@@ -57,7 +69,14 @@ def get_news():
             ),
         )
 
-    return show_reponse(data={"list": data})
+    return show_reponse(
+        data={
+            "page": page,
+            "pageSize": page_size,
+            "total": total,
+            "list": data,
+        }
+    )
 
 
 @route("/api/news/detail")
