@@ -7,3 +7,4 @@ python-dotenv==0.15
 qiniu==7.3.1
 graphene>=3.0
 pytest>=6.*
+DBUtils>=3.0.2

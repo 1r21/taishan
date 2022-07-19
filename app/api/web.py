@@ -44,11 +44,13 @@ def graphql_entry():
 @route("/api/news")
 def get_news():
     query = request.get("qs")
-    page = 1
-    page_size = 10
+    default_page = 1
+    default_page_size = 20
+    page = default_page
+    page_size = default_page_size
     if query:
-        page = int(head(query.get("page") or [1]))
-        page_size = int(head(query.get("pageSize") or [10]))
+        page = int(head(query.get("page") or [default_page]))
+        page_size = int(head(query.get("pageSize") or [default_page_size]))
 
     # date desc
     sql = "SELECT id, title, image_url, date FROM news ORDER BY id DESC LIMIT %s OFFSET %s"

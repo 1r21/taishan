@@ -14,6 +14,7 @@ from app.api.weixin import *
 
 logger = LoggerHandler("app")
 
+
 def application(environ, start_response):
     url = environ.get("PATH_INFO")
     method = environ.get("REQUEST_METHOD")
@@ -29,6 +30,7 @@ def application(environ, start_response):
         try:
             request["data"] = json.loads(data.decode())
         except Exception as e:
+            logger.error(e)
             # xml,form
             request["data"] = data.decode()
 
@@ -48,6 +50,7 @@ def application(environ, start_response):
         return [json.dumps(data).encode("utf-8")]
     except Exception as e:
         err = show_reponse(code=Status.other, message=f"{e}")
+        logger.error(e)
         return [json.dumps(err).encode("utf-8")]
 
 
