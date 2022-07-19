@@ -1,4 +1,8 @@
+from email.policy import default
+import json
+
 from app.libs.db import db_helper
+from app.libs.redis import redis_helper
 from app.libs.logger import LoggerHandler
 from app.libs.decorator import route
 from app.libs.response import Status, show_reponse
@@ -48,17 +52,35 @@ def get_news():
     default_page_size = 20
     page = default_page
     page_size = default_page_size
+    prex_key = "pbs_top_20"
     if query:
         page = int(head(query.get("page") or [default_page]))
         page_size = int(head(query.get("pageSize") or [default_page_size]))
 
+    total_sql = "SELECT COUNT(*) FROM news"
+    total = head(db_helper.fetchone(total_sql))
+
+    if (
+        page == default_page
+        and page_size == default_page_size
+        and redis_helper.has(prex_key)
+    ):
+        top20 = redis_helper.get_list(prex_key, 0, default_page_size - 1)
+        return show_reponse(
+            data={
+                "page": page,
+                "pageSize": page_size,
+                "total": total,
+                "list": list(map(json.loads, top20)),
+            }
+        )
+
     # date desc
     sql = "SELECT id, title, image_url, date FROM news ORDER BY id DESC LIMIT %s OFFSET %s"
-    total_sql = "SELECT COUNT(*) FROM news"
     limit = page_size
     offset = (page - 1) * page_size
     articles = db_helper.execute_sql(sql, (limit, offset))
-    (total,) = db_helper.fetchone(total_sql)
+
     data = []
     for article in articles:
         id, title, image_url, date = article
@@ -70,6 +92,10 @@ def get_news():
                 date=date.strftime("%Y-%m-%d"),
             ),
         )
+
+    if page == default_page and page_size == default_page_size:
+        top_20 = list(map(json.dumps, data))
+        redis_helper.set_list(prex_key, *top_20)
 
     return show_reponse(
         data={
@@ -87,6 +113,12 @@ def get_news_by_id():
     if not data:
         return show_reponse(code=Status.other, message="param error")
     article_id = data.get("id")
+    
+    prefix_key = f"pbs_{article_id}"
+    if redis_helper.has(prefix_key):
+        detail = redis_helper.get(prefix_key)
+        return show_reponse(data=json.loads(detail))
+
     sql = "SELECT title, source, image_url, transcript, date, audio_url FROM news WHERE id = %s"
     article = db_helper.fetchone(sql, article_id)
     if article:
