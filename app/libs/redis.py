@@ -6,13 +6,17 @@ from app.libs.logger import LoggerHandler
 
 HOST = env.get("REDIS_HOST")
 PORT = env.get("REDIS_PORT")
+USERNAME = env.get("REDIS_USERNAME")
+PASSWD = env.get("REDIS_PASSWORD")
 
 logger = LoggerHandler("redis")
 
 
 class RedisHelper:
     def __init__(self) -> None:
-        __pool = redis.ConnectionPool(host=HOST, port=PORT, db=0)
+        __pool = redis.ConnectionPool(
+            host=HOST, port=PORT, username=USERNAME, password=PASSWD, db=0
+        )
         self.__conn = redis.Redis(connection_pool=__pool)
         if self.__conn.ping():
             logger.info("Connect Redis Success")
