@@ -23,6 +23,9 @@ class RedisHelper:
         else:
             logger.error("Connect Redis Fail!")
 
+    def set_expire(self, name, time):
+        return self.__conn.expire(name, time)
+
     def has(self, name):
         return self.__conn.exists(name) == 1
 

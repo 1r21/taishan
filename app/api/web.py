@@ -1,4 +1,3 @@
-from email.policy import default
 import json
 
 from app.libs.db import db_helper
@@ -96,6 +95,8 @@ def get_news():
     if page == default_page and page_size == default_page_size:
         top_20 = list(map(json.dumps, data))
         redis_helper.set_list(prex_key, *top_20)
+        # cache 6h
+        redis_helper.set_expire(prex_key, 6 * 60 * 60)
 
     return show_reponse(
         data={
@@ -113,7 +114,7 @@ def get_news_by_id():
     if not data:
         return show_reponse(code=Status.other, message="param error")
     article_id = data.get("id")
-    
+
     prefix_key = f"pbs_{article_id}"
     if redis_helper.has(prefix_key):
         detail = redis_helper.get(prefix_key)

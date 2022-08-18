@@ -11,12 +11,22 @@ services:
       - "3308:3306"
     volumes:
       # init database and table
-      - ./init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
+      - ./init_db.sql:/docker-entrypoint-initdb.d/init_db.sql                                                                                              
+      - ./mysql-data:/var/lib/mysql
     networks:
       - db
     environment:
       MYSQL_DATABASE: ai_english
       MYSQL_ROOT_PASSWORD: abc124
+
+  redis:                                                                                                             
+    image: redis
+    command: redis-server /usr/local/etc/redis/redis.conf
+    volumes:                                                                                                         
+      - ./redis-cnf:/usr/local/etc/redis
+      - ./redis-data:/data
+    networks:
+      - redis
 
   # uwsgi
   api:
@@ -34,6 +44,7 @@ services:
       - api
     depends_on:
       - db
+      - redis
     env_file: .env
     environment:
       UWSGI_SOCKET: 0.0.0.0:8000
@@ -93,5 +104,6 @@ services:
 
 networks:
   db:
+  redis:
   api:
   web:
