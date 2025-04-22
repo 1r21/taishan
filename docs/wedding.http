@@ -1,0 +1,38 @@
+@baseUrl = http://127.0.0.1:8081/api
+
+# 婚礼留言 API (wedding_wishes.py)
+# Wedding Wishes API endpoints
+
+###
+# 获取所有婚礼留言
+# Get all wedding messages with pagination
+GET {{baseUrl}}/wedding/messages
+
+###
+# 按页获取婚礼留言
+# Get wedding messages with specific page and page size
+GET {{baseUrl}}/wedding/messages?page=1&pageSize=10
+
+###
+# 获取特定ID的婚礼留言
+# Get a specific wedding message by ID
+POST {{baseUrl}}/wedding/message
+Content-Type: application/json
+
+{
+    "id": 1
+}
+
+###
+# 保存新的婚礼留言
+# Save a new wedding message
+POST {{baseUrl}}/wedding/save_message
+Content-Type: application/json
+
+{
+    "name": "张三",
+    "message": "祝福你们新婚快乐，百年好合！",
+    "phone": "13800138000",
+    "attending": true,
+    "guests": 2
+} 

@@ -11,6 +11,7 @@ from app.setting import PORT
 from app.api.web import *
 from app.api.admin import *
 from app.api.weixin import *
+from app.api.wedding_wishes import *
 
 logger = LoggerHandler("app")
 
