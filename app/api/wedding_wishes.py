@@ -128,12 +128,12 @@ def save_wedding_message():
     if not data:
         return show_reponse(code=Status.other, message="Missing parameters")
     
-    name = data.get("name")
+    name = data.get("name") or "匿名"
     message = data.get("message")
     
     # Validate required fields
-    if not name or not message:
-        return show_reponse(code=Status.other, message="Name and message are required")
+    if not message:
+        return show_reponse(code=Status.other, message="message are required")
     
     # Optional fields
     phone = data.get("phone", "")
